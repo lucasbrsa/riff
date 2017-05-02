@@ -1,0 +1,8 @@
+﻿  wind.c
+  string.c
+  main.c
+  logging.c
+  exception.c
+  Generating Code...
+  riff.vcxproj -> D:\Code\riff\x64\Debug\riff.exe
+  riff.vcxproj -> D:\Code\riff\x64\Debug\riff.pdb (Partial PDB)
