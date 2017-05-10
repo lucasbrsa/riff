@@ -1,0 +1,6 @@
+the time is: %s and it's a beautiful day!
+my name is riff - i am a world changing 3d renderer that supports:
+
+  - logging
+  - os checking
+  - \0

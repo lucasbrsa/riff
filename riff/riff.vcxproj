@@ -73,7 +73,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -113,14 +113,12 @@
     <ClCompile Include="exception.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="str.c" />
     <ClCompile Include="wnd.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="def.h" />
+    <ClInclude Include="macro.h" />
     <ClInclude Include="exception.h" />
     <ClInclude Include="logging.h" />
-    <ClInclude Include="str.h" />
     <ClInclude Include="wnd.h" />
   </ItemGroup>
   <ItemGroup>

@@ -30,14 +30,8 @@
     <ClCompile Include="wnd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="str.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="def.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -47,7 +41,7 @@
     <ClInclude Include="wnd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="str.h">
+    <ClInclude Include="macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
