@@ -9,9 +9,13 @@
 #endif // __STDC_VERSION__...
 
 #ifndef __cplusplus
-	#define bool _Bool
-	#define true 1
-	#define false 0
+	#define BOOL _Bool
+	#define TRUE  1
+	#define FALSE 0
+#elif
+	#define BOOL bool
+	#define TRUE true
+	#define FALSE false
 #endif // __cplusplus
 
 #ifndef NULL
@@ -22,8 +26,11 @@
 	#endif // __cplusplus
 #endif // NULL
 
-#define DEBUG _DEBUG
+//personal preference macros
+#define IS_DEBUG _DEBUG
 #define READONLY const
+#define SUCCESS 0
+#define FAILURE -1
 
 //logic found here: http://stackoverflow.com/questions/5919996/how-to-detect-reliably-mac-os-x-ios-linux-windows-in-c-preprocessor
 #define OS_WINDOWS 0

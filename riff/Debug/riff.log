@@ -1,9 +1,1 @@
-﻿  main.c
-d:\code\github\riff\riff\main.c(8): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(205): note: see declaration of 'fopen'
-d:\code\github\riff\riff\main.c(23): warning C4996: 'localtime': This function or variable may be unsafe. Consider using localtime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\time.h(505): note: see declaration of 'localtime'
-d:\code\github\riff\riff\main.c(25): warning C4996: 'asctime': This function or variable may be unsafe. Consider using asctime_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\time.h(116): note: see declaration of 'asctime'
-  riff.vcxproj -> D:\Code\Github\riff\Debug\riff.exe
-  riff.vcxproj -> D:\Code\Github\riff\Debug\riff.pdb (Partial PDB)
+﻿

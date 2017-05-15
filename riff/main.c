@@ -1,37 +1,40 @@
 #include "logging.h"
-
-#include <stdio.h>
-#include <time.h>
+#include "macro.h"
 
 main() 
 {
-	FILE* fp = fopen("../resources/_proc.log", "w");
-	if (!fp) 
-	{
-		puts("failed to open file");
-		return getchar();
-	}
+	log_init("../resources/riff.log");
+	log("hello world!");
+	log_quit();
+	log_init("../resources/riff.log");
+	log_init("../resources/liff.log");
+	log("hello world!");
+	log_quit();
 
-	add_log_target_file(LOG_FILE_TARGET_0, fp);
-	add_log_target_file(LOG_FILE_TARGET_7, stdout);
-	set_log_target_flag( (1 << LOG_FILE_TARGET_0) | (1 << LOG_FILE_TARGET_7) );
+	int u1, u2, u3, d;
+	log_init("../resources/riff.log");
+	log_open_target("../resources/liff.log", LOG_TARGET_1);
+	log_open_target("../resources/miff.log", LOG_TARGET_2);
+	log_open_next_target("../resources/siff.log", &u1);
 
-	time_t t;
-	struct tm* t_info;
-
-	time(&t);
-	t_info = localtime(&t);
+	log("I am writing to 4 files simultaneously");
 	
-	logf("the time is: %s and it's a beautiful day!", asctime(t_info));
-	log("my name is riff - i am a world changing 3d renderer that supports:\n");
-	log("  - logging");
-	log("  - os checking");
-	log("  - \\0");
+	log_open_next_target("../resources/ciff.log", &u2);
+	log_open_next_target("../resources/eiff.log", &u3);
+	log_open_target("../resources/jiff.log", LOG_TARGET_6);
+	log_open_target("../resources/eiff.log", LOG_TARGET_7);
+	if (log_open_next_target("../resources/yiff.log", &d))
+		log("could not open file: ../resources/yiff.log ran out of targets");
 
-	clear_log_target_files();
-	set_log_target_flag(0x00);
+	log("I am writing to 8 files simultaneously");
+	log("seems to be working ^.^");
 
-	fclose(fp);
+	log_reopen_target("../resources/piff.log", LOG_TARGET_6);
+
+	log("jiff.log has now been redirected to piff.log");
+
+	log_open_next_target("../resources/ziff.log", NULL); /* this should fail as all targets are being used */
+	log_quit();
 
 	return getchar();
 }

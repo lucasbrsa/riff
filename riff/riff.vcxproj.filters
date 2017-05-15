@@ -56,4 +56,9 @@
       <Filter>Resources</Filter>
     </Image>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\resources\riff.log">
+      <Filter>Resources</Filter>
+    </Text>
+  </ItemGroup>
 </Project>
