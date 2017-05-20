@@ -26,13 +26,13 @@
 	#endif // __cplusplus
 #endif // NULL
 
-//personal preference macros
+/* personal preference macros */
 #define IS_DEBUG _DEBUG
 #define READONLY const
 #define SUCCESS 0
 #define FAILURE -1
 
-//logic found here: http://stackoverflow.com/questions/5919996/how-to-detect-reliably-mac-os-x-ios-linux-windows-in-c-preprocessor
+/* logic found here: http://stackoverflow.com/questions/5919996/how-to-detect-reliably-mac-os-x-ios-linux-windows-in-c-preprocessor */
 #define OS_WINDOWS 0
 #define OS_WINDOWS64 0
 #define OS_WINDOWS32 0
@@ -85,7 +85,7 @@
 	#undef OS_APPLE
 	#define OS_APPLE 1
 
-	//https://opensource.apple.com/source/CarbonHeaders/CarbonHeaders-18.1/TargetConditionals.h
+	/* https://opensource.apple.com/source/CarbonHeaders/CarbonHeaders-18.1/TargetConditionals.h */
 	#include "TargetConditionals.h"
 
 	#if TARGET_IPHONE_SIMULATOR

@@ -1,13 +1,12 @@
 #include "logging.h"
 #include "macro.h"
 
+#include <stdarg.h>
 #include <malloc.h>
 #include <string.h>
 
 /* internal state machine - stack allocated for now */
 static logger_state_t smachine = { 0 };
-
-#define LOG_OPEN_MODE "w"
 
 /* setup the smachine */
 errno_t log_init(const char* path) {
@@ -17,8 +16,11 @@ errno_t log_init(const char* path) {
 	memset(&smachine, 0, sizeof(logger_state_t));
 
 	smachine.target_flag = 0xFF;
+	smachine.category_flag = 0xFF;
+	smachine.callback = &__log_scallback;
+
 	smachine.target_files[LOG_TARGET_7] = stdout;
-	smachine.target_files[LOG_TARGET_0] = fopen(path, LOG_OPEN_MODE);
+	smachine.target_files[LOG_TARGET_0] = (path)?fopen(path, LOG_OPEN_MODE):NULL;
 
 	return (errno_t)smachine.target_files[LOG_TARGET_0];
 }
@@ -42,7 +44,7 @@ errno_t log_open_next_target(const char* path, tkey_t* out) {
 	tkey_t it;
 	for (it = LOG_TARGET_0; it < LOG_TARGET_COUNT; it++) {
 		if (!smachine.target_files[it]) {
-			*out = it;
+			if(out != NULL)	*out = it;
 			return __log_openq_target(path, it);
 		}
 	}
@@ -61,27 +63,12 @@ errno_t log_reopen_target(const char* path, tkey_t key) {
 	return __log_openq_target(path, key);
 }
 
-void log(const char* data) {
-	tkey_t it = 0, flag = smachine.target_flag;
-
-	while (flag)
-	{
-		if ((flag & 1) && smachine.target_files[it]) {
-			fputs(data, smachine.target_files[it]);
-			fputc('\n', smachine.target_files[it]);
-		}
-
-		flag >>= 1;
-		it++;
-	}
-}
-
-/* links FILE and a key */
+/* links FILE and a key
 errno_t log_add_target(tkey_t key_target, FILE* file_ptr) {
 	errno_t is = smachine.target_files[key_target];
 	smachine.target_files[key_target] = file_ptr;
 	return is;
-}
+} *
 
 /* close a target file */
 errno_t log_close_target(tkey_t key_target) { 
@@ -136,16 +123,85 @@ _Bool __log_is_valid_target(tkey_t key_target) {
 /* flag modifiers */
 
 void log_disable_target(tkey_t key_target) { __log_zero_target_flag_bit(key_target); }
+
 void log_enable_target(tkey_t key_target) { __log_one_target_flag_bit(key_target); }
+
 void log_set_tflag(flag_t flag) { smachine.target_flag = flag; }
+
 void log_disable(void) { smachine.target_flag = 0x00; }
+
 void log_enable(void) { smachine.target_flag = 0xFF; }
+
 _Bool log_get_tflag_bit(tkey_t target) { return ((1 << target) & smachine.target_flag) > 0; }
+
 flag_t log_get_tflag(void) { return smachine.target_flag; }
+
 FILE* log_get_target(tkey_t key_target) { return smachine.target_files[key_target]; }
+
+
+/* core logging system */
+void log_set_callback(log_callback_f lc) { smachine.callback = lc; }
+
+void log_reset_callback(void) { smachine.callback = &__log_scallback; }
+
+void __log_scallback(const char* in, caller_info_t caller_info, int out_len, char* out) {
+	out = malloc(out_len);
+	char* t_buffer = malloc(28);
+
+	strftime(t_buffer, 28, "3", &caller_info.call_time);
+
+	sprintf_s(out, out_len, "INFO[%04i] %s\t%s:%i\n",
+		caller_info.call_num, in, caller_info.func, caller_info.line);
+
+	return;
+}
+
+void log(char* file, int len_file, char* func, int len_func, int line, const char* data) {
+
+	time_t timer;
+	time(&timer);
+	struct tm* t = localtime(&timer);
+
+	char* output = malloc(LOG_BUFF_SIZE);
+	smachine.callback(data, (caller_info_t) {
+		len_file, len_func, line, smachine.log_number,
+		file, func,
+		t }, LOG_BUFF_SIZE, output);
+	
+	tkey_t it = 0, flag = smachine.target_flag;
+
+	while (flag)
+	{
+		if ((flag & 1) && smachine.target_files[it]) {
+			fputs(output, smachine.target_files[it]);
+		}
+
+		flag >>= 1;
+		it++;
+	}
+
+	free(output);
+	smachine.log_number++;
+}
+
+void logf(char* file, int len_file, char* func, int len_func, int line, const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+
+	char* buffer = malloc(LOG_BUFF_SIZE);
+	vsprintf(buffer, fmt, args);
+	
+	log(file, len_file, func, len_func, line, buffer);
+
+	free(buffer);
+	va_end(args);
+}
 
 /* modify bits of the flag */
 
 void __log_flip_target_flag_bit(flag_t target) { smachine.target_flag ^= 1 << target; }
+
 void __log_zero_target_flag_bit(flag_t target) { smachine.target_flag &= ~(1 << target); }
+
 void __log_one_target_flag_bit(flag_t target) { smachine.target_flag |= 1 << target; }
