@@ -128,7 +128,7 @@
     <Image Include="..\resources\wave.png" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\resources\riff.log" />
+    <Text Include="..\resources\proc.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,189 +1,149 @@
-// Important:
-// @TODO check for stdout/err/in so these cannot be closed prematurely
-// @TODO add intermediate log buffer : queue (array) of strings
-// @TODO add categories so certain logging can be disabled
-// @TODO allow for custom logger_state_t's to be used rather than static
-// @TODO check that any reoccurring FILE*s are remedied
-// @TODO allow for FILE*s to be passed rather than just the path
-//
-// Minor:
-// @TODO prevent potential memory leak from repeat calls of log_init
-// @TODO add safety for flag modifier functions
-// @TODO improve performance of __log_is_valid_target
-
-/* The logging system uses an errno_t function and exception design principal.
- * This is because aspects of the exception system cannot work without the logging system
- * A chicken before the egg problem 
- */
+// @ make log priorities zero performance impact
 
 #ifndef _LOGGING_H
 #define _LOGGING_H
 
 #include <stdio.h>
-#include <time.h>
 
-#define LOG_OPEN_MODE "w"
-#define LOG_BUFF_SIZE 256
+typedef unsigned char log_slt_key_t; // sequential log target
+typedef unsigned char log_fm_flag_t; // flag modifier
+typedef unsigned int log_cat_t; // category
+typedef unsigned int log_prio_t; // priority
 
-typedef unsigned char catagorty_t; /* holds an index in the log_category_t enum */
-typedef unsigned char tkey_t; /* used to represent an index in the flag byte */
-typedef unsigned char flag_t; /* used for flag byte */
+// format callback
+typedef errno_t(*log_fc_f)(const char* i, char* o, size_t io_len, log_prio_t p, int ln, char* file, char* func);
 
-/* each log target links a bit of the target_flag with the target_files array */
-/* this allows for a single log to be directed to multiple FILEs */
-/* to put into bit form (1 << LOG_TARGET_N) */
+// all possible sequential log targets
 typedef enum {
-	LOG_TARGET_0 = 0,
-	LOG_TARGET_1,
-	LOG_TARGET_2,
-	LOG_TARGET_3,
-	LOG_TARGET_4,
-	LOG_TARGET_5,
-	LOG_TARGET_6,
-	LOG_TARGET_7, /* stdout */
-	LOG_TARGET_COUNT
-} log_target_t;
+	LOG_SLT_0 = 0,
+	LOG_SLT_1,
+	LOG_SLT_2,
+	LOG_SLT_3,
+	LOG_SLT_4,
+	LOG_SLT_5,
+	LOG_SLT_6,
+	LOG_SLT_7,
+	LOG_SLT_COUNT
+} log_slts_t;
 
-typedef enum {
-	LOG_TFLAG_0 = 1,
-	LOG_TFLAG_1 = 2,
-	LOG_TFLAG_2 = 4,
-	LOG_TFLAG_3 = 8,
-	LOG_TFLAG_4 = 16,
-	LOG_TFLAG_5 = 32,
-	LOG_TFLAG_6 = 64,
-	LOG_TFLAG_7 = 128
-} log_target_flag_t;
+// internal state machine
+typedef struct {
+	FILE* files[LOG_SLT_COUNT];
+	log_slt_key_t flag;
+	log_fc_f callback;
+} log_state_t;
 
-typedef enum {
-	LOG_CATEGORY_RES_0 = 0,
-	LOG_CATEGORY_RES_1,
-	LOG_CATEGORY_RES_2,
-	LOG_CATEGORY_RES_3,
-	LOG_CATEGORY_CUSTOM_0,
-	LOG_CATEGORY_CUSTOM_1,
-	LOG_CATEGORY_CUSTOM_2,
-	LOG_CATEGORY_CUSTOM_3,
-	LOG_CATEGORY_COUNT
-} log_category_t;
+// error codes
+enum {
+	LOG_ENONE = 0,
+	LOG_EGENERIC = 1,
+	LOG_EFORMAT,
+	LOG_ENULL_FP,
+	LOG_EFULL_TARGETS,
+	LOG_EBAD_OPEN,
+	LOG_EBAD_CLOSE
+};
 
-#define LOG_CATEGORY_SRENDERING LOG_CATEGORY_RES_0
-#define LOG_CATEGORY_HRENDERING LOG_CATEGORY_RES_1
-#define LOG_CATEGORY_READING LOG_CATEGORY_RES_2
-#define LOG_CATEGORY_MISC LOG_CATEGORY_RES_3
+/* log raw data to active slt's */
+void log_logr(const char* mbuf);
 
+/* log data to active slt's, using the macro 'log' is recommended */
+errno_t log_log(log_prio_t p, int ln, char* file, char* func, const char* buf);
+
+/* log printf formatted data to active slt's, using the macro 'logf' is recommended */
+errno_t log_logf(log_prio_t p, int ln, char* file, char* func, const char* fmt, ...);
 
 
-/* initializes the built in log_state_t for logging */
-/* returns !SUCCESS if the file could not be opened */
-/* LOG_TARGET_0 stores fopen(path) */
-errno_t log_init(const char* path);
+/* setup the log state machine, opening 'fp' at LOG_SLT_0 */
+void log_init(FILE* fp);
 
-/* close and NULL all currently open log targets while resetting the logger_state_t */
-/* this also resets the log target flag to 0000 0000 */
-/* returns !SUCCESS if one of the files could not be closed */
+/* setup the log state machine, opening the path at LOG_SLT_0 */
+errno_t log_initp(const char* path);
+
+/* free the state machine and close all active files */
 errno_t log_quit(void);
 
-/* opens a file at the key */
-/* returns FAILURE if the file could no be opened or there was already a file at that slot */
-errno_t log_open_target(const char* path, tkey_t key);
 
-/* opens a file in the next available LOG_TARGET which is placed in *out */
-/* returns FAILURE if the file could not be opened or all TARGETS are full */
-errno_t log_open_next_target(const char* path, tkey_t* out);
+/* get the current fc */
+log_fc_f log_fc_get(void);
 
-/* reopens a file based on the path in the key, if there is no file already present the open will persist */
-/* returns !SUCCESS if the file could not be opened or the existing file could not be closed */
-errno_t log_reopen_target(const char* path, tkey_t key);
+/* set a new fc */
+void log_fc_set(log_fc_f fc);
 
-/* REMOVED TO SIMPLIFY THE SYSTEM */
-/* links an existing FILE with a target key */
-/* warning: will override any file at that key */
-/* warning: passing an already targeted file pointer will cause many problems, don't do it */
-/* will return FAILURE if the file has been overridden */
-/* errno_t log_add_target(tkey_t key_target, FILE* file_ptr); */
+/* revert to the default fc */
+void log_fc_reset(void);
 
-/* will safely close the files stored at the key_target */
-/* returns FAILURE if the file could not be closed. */
-errno_t log_close_target(tkey_t key_target);
-
-/* will safely close the all currently open files, somewhat similar to log_quit */
-/* returns FAILURE if one of more of the files could not be closed. */
-errno_t log_close_targets(void);
-
-/* removes a link between a key and FILE target, this will not close the file use log_close_target for that */
-void log_del_target(tkey_t key_target);
-
-/* will remove all target files, but will not close then use log_close_targets for that */
-void log_del_targets(void);
+/* the default fc */
+errno_t log_fc_default(const char* i, char* o, size_t io_len, log_prio_t p, int ln, char* file, char* func);
 
 
+/* store 'fp' the next available slt, returned in 'out' */
+errno_t log_slt_openf(FILE* fp, log_slt_key_t* out);
 
-/* disable all logging from a specific target without closing it */
-void log_disable_target(tkey_t key_target);
+/* store fp at the slt 'key', closing the lt stored at that key */
+errno_t log_slt_openf_at(FILE* fp, log_slt_key_t key);
 
-/* enable all logging from a specific target without closing it */
-void log_enable_target(tkey_t key_target);
+/* open 'path' the next available slt, returned in 'out' */
+errno_t log_slt_open(const char* path, log_slt_key_t* out);
 
-/* enable logging from all file targets */
-void log_disable(void);
+/* open 'path' at the slt 'key', closing the lt stored at that key */
+errno_t log_slt_open_at(const char* path, log_slt_key_t key);
 
-/* disable logging from all file targets */
-void log_enable(void);
+/* close the slt stored at 'key' */
+errno_t log_slt_close_at(log_slt_key_t key);
 
-/* each bit of the flag states weather a specific log target should be written to (byte order, right to left) */
-/* thus use the formula LOG_FILE_TFLAG_0 | LOG_FILE_TFLAG_1 ... */
-void log_set_tflag(flag_t flag);
+/* close all active slt's */
+errno_t log_slt_close_all(void);
 
-/* get the state of a specific bit in the target flag */
-_Bool log_get_tflag_bit(tkey_t target);
+/* get the FILE stored the key */
+FILE* log_slt_get(log_slt_key_t key);
 
-/* get the current target flag */
-flag_t log_get_tflag(void);
+/* return the 'kb'th bit of the fm */
+_Bool log_fm_get_bit(log_slt_key_t kb);
 
-/* for a specific key find the FILE currently accosted with that */
-/* will return NULL when there is no association */
-FILE* log_get_target(tkey_t key_target);
+/* get the current fm */
+log_fm_flag_t log_fm_get(void);
+
+/* set the current fm */
+void log_fm_set(log_fm_flag_t flag);
+
+/* disable a certain slt key in the fm */
+void log_fm_disable_at(log_slt_key_t key);
+
+/* enable a certain slt key in the fm */
+void log_fm_enable_at(log_slt_key_t key);
+
+/* disable all slt's */
+void log_fm_disable_all(void);
+
+/* enable all slt's */
+void log_fm_enable_all(void);
 
 
-
-/* struct that contains any data relevant to the calling context of a log */
-typedef struct {
-	int sfile, sfunc, line, call_num;
-	char *file, *func;
-	struct tm call_time;
-
-} caller_info_t;
-
-/* allows for custom implementations of the logging formatting */
-typedef void(*log_callback_f)(const char* in, caller_info_t caller_info, int out_len, char* out);
-
-void log_set_callback(log_callback_f lc);
-void log_reset_callback(void);
-
-//void logf(const char* fmt, ...);
-void log(char* file, int len_file, char* func, int len_func, int line, const char* data);
-void logf(char* file, int len_file, char* func, int len_func, int line, const char* fmt, ...);
-
-#define LOG(m) log(__FILE__, sizeof(__FILE__)-1, __FUNCTION__, sizeof(__FUNCTION__)-1, __LINE__, m);
-#define LOGF(f, ...) log(__FILE__, sizeof(__FILE__)-1, __FUNCTION__, sizeof(__FUNCTION__)-1, __LINE__, f, __VA_ARGS__);
-
-/* functions used internally that are otherwise useless */
-
-errno_t __log_openq_target(const char* path, tkey_t key);
-_Bool   __log_is_valid_target(tkey_t key_target);
-void    __log_flip_target_flag_bit(flag_t target);
-void    __log_zero_target_flag_bit(flag_t target);
-void    __log_one_target_flag_bit(flag_t target);
-void	__log_scallback(const char* in, caller_info_t caller_info, char* out);
-
-/* container struct for the logger state machine */
-typedef struct {
-	log_callback_f callback; /* the current function used to translate between log inputs to output a string */
-	flag_t category_flag; /* flag that represents logging categories that can be enabled or disabled */
-	flag_t target_flag; /* number where each bit represents weather the associated TARGET should be logged to */
-	FILE* target_files[LOG_TARGET_COUNT]; /* an array of FILEs that the logger will write to, NULLs are skipped */
-	short log_number; /* how many logs have been made so far */
-} logger_state_t;
-
+#ifndef LOG_WMODE
+#	define LOG_WMODE "w"
 #endif
+#ifndef LOG_BUFF_SIZE
+#	define LOG_BUFF_SIZE 256
+#endif
+#ifndef _MSC_VER
+#	define __FUNCTION__ "<anonymous>"
+#endif
+#ifndef _WIN32
+#	define LOG_DIRCHR '/'
+#else
+#	define LOG_DIRCHR '\\'
+#endif
+#define LOG_FILENAME (strrchr(__FILE__, LOG_DIRCHR) ? strrchr(__FILE__, LOG_DIRCHR) + 1 : __FILE__)
+
+
+/* log printf formatted data to active slt's */
+#define logf(fmt, ...) log_logf(0, __LINE__, LOG_FILENAME, __FUNCTION__, fmt, __VA_ARGS__)
+
+/* log data to active slt's */
+#define log(txt) log_log(0, __LINE__, LOG_FILENAME, __FUNCTION__, txt)
+
+/* log raw data to active slt's */
+#define logr(txt) log_logr(txt);
+
+#endif // _LOGGING_H
