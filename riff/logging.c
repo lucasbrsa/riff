@@ -6,79 +6,87 @@
 #include <string.h>
 #include <assert.h>
 
-/* internal state machine, stack allocated for now */
-static log_state_t smachine = { 0 };
+#define LOG_CAT_NAME_BUFF 12
+#define LOG_SLT_BUFF_SIZE 256
+#define LOG_SLT_OPEN_MODE "w"
+#define LOG_PRIO_DEFAULT LOG_PRIO_INFO
+#define LOG_PRIO_DEFAULT_TEST LOG_PRIO_DEBUG
+#define LOG_PRIO_DEFAULT_ASSERTION LOG_PRIO_WARN
+#define LOG_PRIO_DEFAULT_APPLICATION LOG_PRIO_ERROR
 
 /* functions used internally that are otherwise useless */
-_Bool   __log_slt_is_valid(log_slt_key_t key);
+void	__log_cap_cts(log_cat_t cat, char* wbuf, size_t len);
 _Bool   __log_slt_is_std(log_slt_key_t key);
+_Bool   __log_slt_is_valid(log_slt_key_t key);
 void	__log_fm_flip_bit(log_slt_key_t target);
 void	__log_fm_zero_bit(log_slt_key_t target);
 void	__log_fm_one_bit(log_slt_key_t target);
 
+/* internal state machine, stack allocated */
+static log_state_t smachine = { 
+	.files={ 0 }, 
+	.flag=0xFF, 
+	.callback=log_fc_default, 
+	.capp = LOG_PRIO_DEFAULT_APPLICATION,
+	.cassert = LOG_PRIO_DEFAULT_ASSERTION,
+	.ctest = LOG_PRIO_DEFAULT_TEST,
+	.tail = { NULL },
+};
+
+static const char* cat_lut[LOG_CAT_RESERVED0] = { "APPLICATION","ASSERTION","TEST","ERROR","SYS","RENDER", };
+static const char* prio_lut[LOG_PRIO_COUNT] = { NULL,"TRACE","DEBUG","INFO","WARN","ERROR","FATAL" };
+
 
 /* core */
 
-void log_logr(char* mbuf) {
-	log_slt_key_t it = 0, flag = smachine.flag;
+void log_message(log_cat_t c, log_prio_t p, int ln, char* file, char* func, const char* fmt, ...) {
+	if(!smachine.callback || !fmt)
+		return;
+	if (p < log_cap_get(c))
+		return;
 
+	va_list args;
+	va_start(args, fmt);
+	
+	char out[LOG_SLT_BUFF_SIZE], post[LOG_SLT_BUFF_SIZE];
+	vsnprintf(out, LOG_SLT_BUFF_SIZE, fmt, args);
+	
+	char* fchar = out + (strnlen(out, LOG_SLT_BUFF_SIZE)-1);
+	if (fchar != out)
+		if (*fchar == '\n' || *fchar == '\r') 
+			*fchar = '\0';
+	
+	(*smachine.callback)(out, post, LOG_SLT_BUFF_SIZE, c, p, ln, file, func);
+
+	log_slt_key_t it = 0, flag = smachine.flag;
 	while (flag) {
 		if ((flag & 1) && smachine.files[it])
-			fputs(mbuf, smachine.files[it]);
+			fputs(post, smachine.files[it]);
 
 		flag >>= 1;
 		it++;
 	}
 
-	return LOG_ENONE;
-}
-
-errno_t log_log(log_prio_t p, int ln, char* file, char* func, const char* buf) {
-	char post_format[LOG_BUFF_SIZE];
-	if ((*smachine.callback)(buf, post_format, LOG_BUFF_SIZE, p, ln, file, func) != LOG_ENONE)
-		return LOG_EFORMAT;
-	
-	log_logr(post_format);
-
-	return LOG_ENONE;
-}
-
-errno_t log_logf(log_prio_t p, int ln, char* file, char* func, const char* fmt, ...) {
-	va_list args;
-	va_start(args, fmt);
-
-	char pre_format[LOG_BUFF_SIZE], post_format[LOG_BUFF_SIZE];
-	vsnprintf(post_format, LOG_BUFF_SIZE, fmt, args);
-	errno_t e = log_log(p, ln, file, func, post_format);
 	va_end(args);
-	return e;
 }
 
-void log_init(FILE* fp) {
+void log_quit(void) {
+	log_cap_free();
+	log_slt_close_all();
 
-	// would prevent memory leak in the case of double log_init
-	// disabled for performance
-	// log_quit();
-
+	free(smachine.tail);
 	memset(&smachine, 0, sizeof(log_state_t));
+}
 
-	smachine.flag = 0xFF;
+void log_reset(void) {
+	log_quit();
+
+	smachine.tail = malloc(sizeof(log_cap_t));
 	smachine.callback = &log_fc_default;
-	smachine.files[LOG_SLT_0] = fp;
-}
 
-errno_t log_initp(const char* path) { 
-	FILE* fp = (path) ? fopen(path, LOG_WMODE) : NULL;
-	if (!fp) return LOG_ENULL_FP;
-	
-	log_init(fp);
-	return LOG_ENONE;
-}
-
-errno_t log_quit(void) {
-	smachine.flag = 0x0;
-	smachine.callback = NULL;
-	return log_slt_close_all();
+	smachine.cassert = LOG_PRIO_DEFAULT_ASSERTION;
+	smachine.capp = LOG_PRIO_DEFAULT_APPLICATION;
+	smachine.ctest = LOG_PRIO_DEFAULT_TEST;
 }
 
 
@@ -90,28 +98,99 @@ void log_fc_set(log_fc_f fc) { smachine.callback = fc; }
 
 void log_fc_reset(void) { log_fc_set(log_fc_default); }
 
-errno_t log_fc_default(const char* i, char* o, size_t io_len, log_prio_t p, int ln, char* file, char* func) {
-	//assert(p < LOG_LEVEL_COUNT && p >= 0);
-	
+/* provided purely as an example */
+void log_fc_default(const char* i, char* o, size_t io_len, log_cat_t c, log_prio_t p, int ln, char* file, char* func) {
 	char str_time[9];
-	char str_date[11];
 	time_t t = time(NULL);
-
 	strftime(str_time, sizeof(str_time), "%H:%M:%S", localtime(&t));
-	strftime(str_date, sizeof(str_date), "%d-%m-%Y", localtime(&t));
 
-	return (sprintf_s(o, io_len, "%s %s | %-5s | %s %s:%d | %s\n",
-		str_date, str_time,
-		"<DEBUG>", /* temp */
-		file, func, ln, i) == -1) ? LOG_EFORMAT : LOG_ENONE;
+	char str_cat[LOG_CAT_NAME_BUFF];
+	__log_cap_cts(c, str_cat, LOG_CAT_NAME_BUFF);
+
+	sprintf_s(o, io_len, "%s | %-*s | %-6s | %s\n", str_time, LOG_CAT_NAME_BUFF, str_cat, prio_lut[p], i);
+}
+
+
+/* category associated priorities */
+
+void log_cap_set_all(log_prio_t np) {
+	for (log_cap_t*head = smachine.tail; head; head = head->next) {
+		head->prio = np;
+	}
+
+	smachine.capp = np;
+	smachine.ctest = np;
+	smachine.cassert = np;
+}
+
+void log_cap_set(log_prio_t prio, log_cat_t cat) {
+	if (cat == LOG_CAT_APPLICATION) { smachine.capp = cat; return; }
+	if (cat == LOG_CAT_ASSERTION) { smachine.cassert = cat; return; }
+	if (cat == LOG_CAT_TEST) { smachine.ctest = cat; return; }
+
+	log_cap_t* head;
+	for (head = smachine.tail; head; head = head->next) {
+
+		if (head->cat == cat) {
+			head->prio = prio;
+			return;
+		}
+	}
+
+	/* add new node */
+	head = malloc(sizeof(log_cap_t));
+	head->cat = cat;
+	head->prio = prio;
+	head->next = smachine.tail;
+	smachine.tail = head;
+}
+
+log_prio_t log_cap_get(log_cat_t cat) {
+	if (cat == LOG_CAT_APPLICATION) return smachine.capp;
+	if (cat == LOG_CAT_ASSERTION) return smachine.cassert;
+	if (cat == LOG_CAT_TEST) return smachine.ctest;
+
+	for (log_cap_t* head = smachine.tail; head; head = head->next) {
+		if (head->cat == cat)
+			return head->prio;
+	}
+	
+	return LOG_PRIO_DEFAULT;
+}
+
+void log_cap_free(void) {
+	smachine.cassert = LOG_PRIO_DEFAULT_ASSERTION;
+	smachine.capp = LOG_PRIO_DEFAULT_APPLICATION;
+	smachine.ctest = LOG_PRIO_DEFAULT_TEST;
+	
+	log_cap_t* head;
+	while (smachine.tail) {
+		head = smachine.tail;
+		smachine.tail = smachine.tail->next;
+
+		free(head);
+		head = NULL;
+	}
+	smachine.tail = NULL;
+}
+
+void __log_cap_cts(log_cat_t cat, char* wbuf, size_t len) {
+	assert(cat >= 0 && cat < LOG_CAT_COUNT);
+	if (cat < LOG_CAT_RESERVED0) {
+		strncpy(wbuf, cat_lut[cat], len);
+		return;
+	}
+
+	if (cat > LOG_CAT_RESERVED7) sprintf_s(wbuf, len, "CUSTOM%i", cat - LOG_CAT_CUSTOM0);
+	else /*					  */ sprintf_s(wbuf, len, "RESERVED%i", cat - LOG_CAT_RESERVED0);
 }
 
 
 /* sequential log targets */
 
-errno_t log_slt_openf(FILE* fp, log_slt_key_t* out) {
+errno_t log_slt_open(FILE* fp, log_slt_key_t* out) {
 	log_slt_key_t it;
-	for (it = LOG_SLT_0; it < LOG_SLT_COUNT; it++) {
+	for (it = LOG_SLT0; it < LOG_SLT_COUNT; it++) {
 		if (!smachine.files[it]) {
 			if (out != NULL)
 				*out = it;
@@ -122,36 +201,6 @@ errno_t log_slt_openf(FILE* fp, log_slt_key_t* out) {
 	}
 
 	return LOG_EFULL_TARGETS;
-}
-
-errno_t log_slt_open(const char* path, log_slt_key_t* out) {
-	FILE* fp;
-	if (fp = fopen(path, LOG_WMODE))
-		return log_slt_openf(fp, out);
-	return LOG_EBAD_OPEN;
-}
-
-errno_t log_slt_openf_at(FILE* fp, log_slt_key_t key) {
-	assert(key < LOG_SLT_COUNT);
-
-	if (smachine.files[key]) {
-		if (!__log_slt_is_std(key))
-			if (fclose(smachine.files[key]))
-				return LOG_EBAD_CLOSE;
-
-		smachine.files[key] = NULL;
-	}
-
-	smachine.files[key] = fp;
-	return LOG_ENONE;
-}
-
-errno_t log_slt_open_at(const char* path, log_slt_key_t key) {
-	FILE* fp = fopen(path, LOG_WMODE);
-	if (!fp)
-		return LOG_EBAD_OPEN;
-
-	return log_slt_openf_at(fp, key);
 }
 
 errno_t log_slt_close_at(log_slt_key_t key) {
@@ -169,7 +218,7 @@ errno_t log_slt_close_all(void) {
 	int err = 0;
 	log_slt_key_t it;
 
-	for (it = LOG_SLT_0; it < LOG_SLT_COUNT; it++) {
+	for (it = LOG_SLT0; it < LOG_SLT_COUNT; it++) {
 		if (__log_slt_is_valid(it))
 			err |= fclose(smachine.files[it]);
 
@@ -178,6 +227,8 @@ errno_t log_slt_close_all(void) {
 
 	return (!err)?LOG_ENONE:LOG_EBAD_CLOSE;
 }
+
+FILE* log_slt_get(log_slt_key_t key) { return smachine.files[key]; }
 
 
 /* functions used internally that are otherwise useless */
@@ -193,7 +244,6 @@ _Bool __log_slt_is_valid(log_slt_key_t key) {
 	return (smachine.files[key] && !__log_slt_is_std(key));
 }
 
-FILE* log_slt_get(log_slt_key_t key) { return smachine.files[key]; }
 
 
 /* log flag */

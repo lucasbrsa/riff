@@ -1,2 +1,4 @@
-05-06-2017 22:48:51 | <DEBUG> | main.c main:13 | hello world!
-05-06-2017 22:48:51 | <DEBUG> | main.c main:14 | compiled at: 22:48:47
+23:47:23 | APPLICATION  | ERROR  | log
+23:47:23 | APPLICATION  | FATAL  | log
+23:47:23 | RENDER       | ERROR  | log
+23:47:23 | RENDER       | FATAL  | log
