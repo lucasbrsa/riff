@@ -1,3 +1,4 @@
+#if 0
 #include "logging.h"
 #include "logdef.h"
 
@@ -23,4 +24,40 @@ main() {
 
 	log_quit();
 	getchar();
+}
+#endif
+
+#include <stdio.h>
+#include <string.h>
+
+int power(int base, int exponent)
+{
+	if (!exponent) { return 1; }
+	int result = base;
+	for (int i = 1; i < exponent; i++) { result *= base; }
+	return result;
+}
+
+int get_hashcode(const char* str, size_t len)
+{
+	int hashed = NULL;
+
+	for (int i = 0; i < len; i++) { hashed += (int)str[i] * power(31, len - (i + 1)); }
+
+	return hashed % 256;
+}
+
+
+int main(int argc, char** argv)
+{
+
+	const char* test = " ";
+
+	printf("\nHashcode: %i\n", get_hashcode(test, strlen(test)));
+	
+
+	printf("ruchir");
+
+	
+	getchar(); return 0;
 }
