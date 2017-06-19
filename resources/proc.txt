@@ -1,4 +1,4 @@
-23:47:23 | APPLICATION  | ERROR  | log
-23:47:23 | APPLICATION  | FATAL  | log
-23:47:23 | RENDER       | ERROR  | log
-23:47:23 | RENDER       | FATAL  | log
+16:21:33 | APPLICATION  | ERROR  | log
+16:21:33 | APPLICATION  | FATAL  | log
+16:21:33 | RENDER       | ERROR  | log
+16:21:33 | RENDER       | FATAL  | log

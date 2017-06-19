@@ -75,6 +75,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -111,17 +112,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="exception.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="main.c" />
-    <ClCompile Include="wnd.c" />
+    <ClCompile Include="str.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="logdef.h" />
     <ClInclude Include="macro.h" />
-    <ClInclude Include="exception.h" />
     <ClInclude Include="logging.h" />
-    <ClInclude Include="wnd.h" />
+    <ClInclude Include="str.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\resources\buidling.bmp" />

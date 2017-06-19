@@ -7,22 +7,35 @@
 #	define INLINE
 #endif
 
-#ifndef __cplusplus
-#	define BOOL _Bool
-#	define TRUE  1
-#	define FALSE 0
-#elif
-#	define BOOL bool
-#	define TRUE true
-#	define FALSE false
+// Definitions of common types
+#ifdef _WIN64
+typedef signed __int64 ssize_t;
+#else
+typedef signed int ssize_t;
 #endif
 
-#ifndef NULL
-#	ifdef __cplusplus
-#		define NULL 0
-#	else
-#		define NULL ((void *)0)
+#include <stdbool.h>
+#include <stddef.h>
+
+/* removed in favor of stdbool + stddef */
+#if 0
+#	ifndef __cplusplus
+#		define BOOL _Bool
+#		define TRUE  1
+#		define FALSE 0
+#	elif
+#		define BOOL bool
+#		define TRUE true
+#		define FALSE false
 #	endif
+
+#	ifndef NULL
+#		ifdef __cplusplus
+#			define NULL 0
+#		else
+#			define NULL ((void *)0)
+#		endif
+#endif
 #endif
 
 #define OS_WINDOWS 0

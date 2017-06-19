@@ -18,33 +18,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="exception.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="logging.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="wnd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.c">
       <Filter>Demo</Filter>
+    </ClCompile>
+    <ClCompile Include="str.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="exception.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="wnd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="logdef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="str.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
