@@ -113,12 +113,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="exception.c" />
+    <ClCompile Include="hashmap.c" />
+    <ClCompile Include="linkedlist.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="queue.c" />
     <ClCompile Include="wnd.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="hashmap.h" />
+    <ClInclude Include="helper.h" />
+    <ClInclude Include="linkedlist.h" />
     <ClInclude Include="logdef.h" />
     <ClInclude Include="macro.h" />
     <ClInclude Include="exception.h" />
