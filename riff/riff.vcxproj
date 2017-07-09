@@ -112,11 +112,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="base64.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="str.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="base64.h" />
     <ClInclude Include="logdef.h" />
     <ClInclude Include="macro.h" />
     <ClInclude Include="logging.h" />
