@@ -27,9 +27,6 @@
     <ClCompile Include="str.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="base64.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="logging.h">
@@ -42,9 +39,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="str.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="base64.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

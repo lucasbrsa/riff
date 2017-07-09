@@ -203,7 +203,7 @@ char* str_toupper(char* buf) {
 	char* b = buf;
 	while (*b++)
 		if (str_islower(*b))
-			*b -= 32;
+			*b &= '_';
 	return buf;
 }
 
@@ -211,16 +211,16 @@ char* str_tolower(char* buf) {
 	char* b = buf;
 	while (*b++)
 		if (str_isupper(*b))
-			*b += 32;
+			*b |= ' ';
 	return buf;
 }
 
 char* str_swap_case(char* buf) {
 	char* b = buf;
-	while (*b++) {
-		if (str_isupper(*b)) *b += 32;
-		if (str_islower(*b)) *b -= 32;
-	}
+	do {
+		if (str_islatin(*b))
+			*b ^= ' ';
+	} while (*b++);
 
 	return buf;
 }
