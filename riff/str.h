@@ -2,7 +2,21 @@
 #define _STR_H
 
 #include "macro.h"
+
 #include <time.h>
+#include <limits.h>
+#include <float.h>
+
+#define __STR(x) #x
+#define __SI64_MAXS ( 10 * sizeof(signed __int64) * CHAR_BIT/33   +3)
+#define __UI64_MAXS ( 10 * sizeof(unsigned __int64) * CHAR_BIT/33 +2)
+#define __PTR_MAXS sizeof(__STR( SIZE_MAX )) + 1
+
+/* type conversion: signed __int64 to string */
+char* str_sits(signed __int64 s, char buf[__SI64_MAXS]);
+
+/* type conversion: unsigned __int64 to string */
+char* str_uits(unsigned __int64 u, char buf[__UI64_MAXS]);
 
 /* strip trailing whitespace, returns point to the first non-whitespace char */
 char* str_rstrip(char* buf);

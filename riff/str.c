@@ -13,6 +13,51 @@
  * memmove
  */
 
+static const char dpair_lut[] =
+"00010203040506070809"
+"10111213141516171819"
+"20212223242526272829"
+"30313233343536373839"
+"40414243444546474849"
+"50515253545556575859"
+"60616263646566676869"
+"70717273747576777879"
+"80818283848586878889"
+"90919293949596979899";
+
+char* str_uits(unsigned __int64 u, char buf[__UI64_MAXS]) {
+	char* end = buf + __UI64_MAXS - 1;
+	int carry;
+	*end = 0;
+
+	while (u >= 100) {
+		carry = ((u % 100) << 1) + 1;
+		*--end = dpair_lut[carry--];
+		*--end = dpair_lut[carry];
+		u /= 100;
+	}
+
+	if (u < 10) {
+		*--end = '0' + u;
+		return end;
+	}
+	
+	carry = ((u % 100) << 1) + 1;
+	*--end = dpair_lut[carry--];
+	*--end = dpair_lut[carry];
+	u /= 100;
+	return end;
+}
+
+char* str_sits(signed __int64 s, char buf[__SI64_MAXS]) {
+	buf = str_uits(s, buf);
+
+	if ((!!s) | -(int)((unsigned)s >> (63)))
+		*--buf = '-';
+	
+	return buf;
+}
+
 char* str_rstrip(char* buf) {
 	ssize_t len = strlen(buf);
 	char* mbit = buf + len;
