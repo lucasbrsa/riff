@@ -10,23 +10,30 @@
 
 /* global configuration */
 
-typedef char* (*log_fmtcback)(void);
+typedef struct {
+	char* formatted;
+	
+	/* temporary, for demonstrating the format meme */
+	const char* message;
+	unsigned cat;
+} log_message_t;
 
-typedef union {
-	long long i;
-	char* c;
-} log_typepair;
+typedef void (*log_fmt_cback)(log_message_t* msg);
+
+/* would much rather use anonymous function */
+typedef struct {
+	char* leftof;
+	log_fmt_cback c;
+} log_fmt_stpair_t;
 
 typedef struct {
-	union {
-		log_typepair* p;
-		log_fmtcback c;
-	}*lut;
-} log_cfmt_t;
+	log_fmt_stpair_t* stack;
+	char* left_pool;
+	unsigned short len;
+} log_fmt_t;
 
 /*
 * %c catagory
-* %d date
 * %e custom environment variables
 * %f file
 * %i the process id
@@ -36,25 +43,28 @@ typedef struct {
 * %o output filename
 * %p level
 * %s the log message
-* %t time
+* %t date time
 * %% percent sign
 */
-log_cfmt_t log_compile_pattern(const char* fmt);
+log_fmt_t log_compile_pattern(const char* fmt);
 
-void log_free_pattern(log_cfmt_t* const patt);
+log_fmt_cback log_interpret_fmt_flag(char flg);
 
-errno_t log_set_pattern(const log_cfmt_t* patt);
+void log_free_fmt(log_fmt_t patt);
+
+/* tmp demonstration kode with karlie */
+void log_print_fmt(log_message_t* msg, log_fmt_t fmt);
+
+/* ehh, just shit that modifies the state machine... not really important */
+void log_set_fmt(const log_fmt_t* patt);
+
+void log_set_pattern(const char* fmt);
+
+void log_set_timepattern(const char* patt);
 
 void log_reset_pattern(void);
 
-void log_set_time_format(const char* fmt);
-
-void log_set_date_format(const char* fmt);
-
-/* temporary, for demonstrating the format meme */
-typedef struct {
-	const char* fmt;
-} logger_t;
+void log_reset_timepattern(void);
 
 //void log_set_level(void);
 
