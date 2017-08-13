@@ -10,11 +10,18 @@
 
 /* global configuration */
 
+typedef char* (*log_fmtcback)(void);
+
+typedef union {
+	long long i;
+	char* c;
+} log_typepair;
+
 typedef struct {
 	union {
-		long long i;
-		char* c;
-	}* lut;
+		log_typepair* p;
+		log_fmtcback c;
+	}*lut;
 } log_cfmt_t;
 
 /*
@@ -43,6 +50,11 @@ void log_reset_pattern(void);
 void log_set_time_format(const char* fmt);
 
 void log_set_date_format(const char* fmt);
+
+/* temporary, for demonstrating the format meme */
+typedef struct {
+	const char* fmt;
+} logger_t;
 
 //void log_set_level(void);
 
