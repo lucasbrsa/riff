@@ -99,7 +99,7 @@ char* str_tolower(char* buf);
 char* str_swap_case(char* buf);
 
 /* directional copy in place, like strncpy */
-char* str_dircpy(char* dest, const char* src, ssize_t n, int step);
+char* str_dircpy(char* dest, const char* src, ssize_t  n, int step);
 
 /* allow for infinite string concatenation, the final argument must be NULL */
 char* str_concat(size_t anct, char* dest, ...);

@@ -11,14 +11,14 @@
 /* global configuration */
 
 typedef struct {
-	char* formatted;
+	char* _formatted;
 	
 	/* temporary, for demonstrating the format meme */
 	const char* message;
 	unsigned cat;
-} log_message_t;
+} log_msg_t;
 
-typedef void (*log_fmt_cback)(log_message_t* msg);
+typedef void (*log_fmt_cback)(log_msg_t* msg);
 
 /* would much rather use anonymous function */
 typedef struct {
@@ -50,10 +50,10 @@ log_fmt_t log_compile_pattern(const char* fmt);
 
 log_fmt_cback log_interpret_fmt_flag(char flg);
 
-void log_free_fmt(log_fmt_t patt);
+void log_free_fmt(log_fmt_t* const patt);
 
 /* tmp demonstration kode with karlie */
-void log_print_fmt(log_message_t* msg, log_fmt_t fmt);
+void log_print_fmt(log_msg_t* msg, log_fmt_t fmt);
 
 /* ehh, just shit that modifies the state machine... not really important */
 void log_set_fmt(const log_fmt_t* patt);

@@ -1,39 +1,17 @@
-#include "str.h"
-
-#include <stdlib.h>
-#include <time.h>
+#include <malloc.h>
 #include <stdio.h>
+#include "log.h"
 
-main() { 
-	double time_spent = 0.0;
-	char buffer[__UI64_MAXS];
-	for (int j = 0; j < 10; j++) {
-		for (int i = 0; i < 1000000; i++) {
-			clock_t begin = clock();
-
-			//str_uits(i, buffer);
-			//sprintf(buffer, "%i", i);
-			itoa(i, buffer, 10);
-
-			clock_t end = clock();
-			time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-		}
-		printf("[ITOA] %f\n", time_spent);
-		time_spent = 0;
-	}
-
-	for (int j = 0; j < 10; j++) {
-		for (int i = 0; i < 1000000; i++) {
-			clock_t begin = clock();
-
-			str_uits(i, buffer);
-
-			clock_t end = clock();
-			time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-		}
-		printf("[str_uits] %f\n", time_spent);
-		time_spent = 0;
-	}
+int main(int argc, char** argv) {
+	log_fmt_t p = log_compile_pattern("[%c:%t] %% %m");
+	log_msg_t* m = malloc(sizeof(log_msg_t));
+	
+	m->cat = 0;
+	m->message = "smd";
+	
+	log_print_fmt(m, p);
+	log_free_fmt(&p);
+	free(m);
 
 	return getchar();
 }
