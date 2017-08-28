@@ -30,12 +30,12 @@
     <ClCompile Include="log.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vector.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="logging.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="macro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="logdef.h">
@@ -45,6 +45,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="generic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

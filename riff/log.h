@@ -3,19 +3,15 @@
 
 #include <stdio.h>
 
+/* global configuration */
 /* category - lookups that identify the logs place in the program */
 /* format - the output format string */
 /* rules - the map of categories to their targets and how it should look */
 /* configuration is split into two sections: global and per logger */
 
-/* global configuration */
-
+/* temporary, for demonstrating the format meme */
 typedef struct {
-	char* _formatted;
-	
-	/* temporary, for demonstrating the format meme */
-	const char* message;
-	unsigned cat;
+	char *in, *out;
 } log_msg_t;
 
 typedef void (*log_fmt_cback)(log_msg_t* msg);

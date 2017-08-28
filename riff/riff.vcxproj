@@ -120,13 +120,15 @@
     <ClCompile Include="logging.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="str.c" />
+    <ClCompile Include="vector.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="generic.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="logdef.h" />
-    <ClInclude Include="macro.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="str.h" />
+    <ClInclude Include="vector.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\resources\buidling.bmp" />
