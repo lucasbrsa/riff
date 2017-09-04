@@ -5,99 +5,97 @@
 #include <string.h>
 #include <stdlib.h>
 
+void log_interpret_flag_m(log_msg_t* msg);
+void log_interpret_flag_t(log_msg_t* msg);
+
+#define LOG_DFMTC	8
 #define LOG_TBL		32
 #define LOG_BMSGL	128
 
 log_fmt_t log_compile_pattern(const char* fmt) {
-	/* first pass to determine number of members, can be removed once vector is implemented */
-	char* itr = fmt;
-	int sz = 0;
-	do {
-		if (*itr == '%' && *(itr + 1)) {
-			if (*(itr + 1) != '%') 
-				sz++;
-			else 
-				itr++;
-		}
-	} while (*++itr);
+	static log_fmt_cback cback_lut[26] = {
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, log_interpret_flag_m, 0, 0, 0, 0, 0, 0, log_interpret_flag_t, 0, 0, 0, 0, 0, 0
+	};
 
+	size_t depth = 0;
+	for (char* c = fmt; *c; c++) {
+		if (*c == '%' && *(c + 1) && *(c + 1) != '%')
+			depth++, c++;
+	}
 
 	log_fmt_t res = {
-		.stack = malloc(sizeof(log_fmt_stpair_t) * sz), /* allocation */
-		.left_pool = str_dup(fmt), /* allocation */
-		.len = sz,
+		.stack = malloc(sizeof(log_fmtsec_t) * depth), /* stores the fmt pairs */
+		.pool = str_dup(fmt), /* this is where the fmt is allocated */
+		.depth = depth
 	};
 	
-	unsigned idx = 0;
-	char* prev_ptr;
-	for (itr = prev_ptr = res.left_pool; *itr; itr++) {
+	size_t head = 0;
+	char *prev_ptr, *itr;
+	for (itr = prev_ptr = res.pool; *itr; itr++) {
 		if (*itr == '%' && *(itr + 1) && *(itr + 1) != '%') {
-			res.stack[idx].leftof = prev_ptr;
-			res.stack[idx].c = log_interpret_fmt_flag(*(1+itr));
-			*itr = 0; prev_ptr = 0; idx++, itr++;
+			res.stack[head].leftof = prev_ptr;
+			res.stack[head].c = (str_islower(*(1 + itr))) ? cback_lut[*(1 + itr) - 'a'] : 0;
+			
+			if (head)
+				res.stack[head - 1].llen = res.stack[head].leftof - res.stack[head - 1].leftof;
+			if (head == res.depth)
+				res.stack[head].llen = strlen(res.stack[head].leftof); /* maybe -1 head or some shit */
+
+			*itr = prev_ptr = 0;
+			itr++, head++;
 		} 
-		else 
+		else {
 			if (!prev_ptr)
 				prev_ptr = itr;
-
+		}
+		
+		/* handles %% case, look for a neater solution */
+		/* will not make %% = % rather %% = %% fix */
 		if (*itr == '%' && *(itr + 1) == '%')
 			itr++;
 	}
 
-	res.stack[idx].leftof = prev_ptr;
-	res.stack[idx].c = 0;
+	res.stack[res.depth - 1].leftof = (prev_ptr) ? prev_ptr : itr;
+	res.stack[res.depth - 1].c = 0;
 
 	return res;
 }
 
 void log_free_fmt(log_fmt_t* const patt) {
 	if (patt) {
-		free(patt->left_pool);
 		free(patt->stack);
+		free(patt->pool);
 
-		patt->left_pool = NULL;
+		patt->pool = NULL;
 		patt->stack = NULL;
 	}
 }
 
 void log_print_fmt(log_msg_t* msg, log_fmt_t fmt) {
-	char* fb = malloc(LOG_BMSGL); /* it would be cool if there was a way of doing things independent of length... like a linked list of buffers */
-	msg->out = fb;
-
-	for (int i = 0; i < fmt.len; i++) {
-		size_t mlen = ((i + 1 < fmt.len) ?
-			fmt.stack[i + 1].leftof - fmt.stack[i].leftof :
-			strlen(fmt.stack[i].leftof)) - 2;
+	/* msg->out = vector_init(LOG_BMSGL, sizeof(char)); */
+	msg->out = malloc(LOG_BMSGL);
+	
+	for (int i = 0; i < fmt.depth; i++) {
+		size_t mlen;
+		
+		if (i < fmt.depth - 2)
+			mlen = fmt.stack[i + 1].leftof - fmt.stack[i].leftof;
+		else
+			mlen = strlen(fmt.stack[i].leftof);
 
 		msg->out = (char*)memcpy(msg->out, fmt.stack[i].leftof, mlen) + mlen;
-		fmt.stack[i].c(msg);
+		if (fmt.stack[i].c)
+			fmt.stack[i].c(msg);
 	}
 
-	puts(fb);
-
-	puts(fb);
-	free(fb);
+	puts(msg->out);
+	free(msg->out);
 	msg->out = NULL; /* just to be safe, not really nessisary though */
-}
-
-void log_interpret_flag_c(log_msg_t* msg);
-void log_interpret_flag_m(log_msg_t* msg);
-void log_interpret_flag_t(log_msg_t* msg);
-
-/* consider inlining this function into log_compile_pattern since it's so fuckin simple */
-log_fmt_cback log_interpret_fmt_flag(char flg) {
-	static log_fmt_cback cback_lut[26] = {
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, log_interpret_flag_m, 0, 0, 0, 0, 0, 0, log_interpret_flag_t, 0, 0, 0, 0, 0, 0
-	};
-
-	/* could potentially require switch for certain custom interprets */
-	return (str_islower(flg))? cback_lut[flg - 'a'] : 0;
 }
 
 void log_interpret_flag_m(log_msg_t* msg) {
 	size_t d = strlen(msg->in);
-	memcpy(msg->out, msg->in, d);
-	msg->out += d-1;
+	msg->out = (char*)memcpy(msg->out, msg->in, d) + d;
 }
 
 void log_interpret_flag_t(log_msg_t* msg) {

@@ -1,7 +1,10 @@
+/* @TODO go through and check from fail cases, such as failed allocs */
 #ifndef _LOG_H
 #define _LOG_H
 
 #include <stdio.h>
+
+#include "vector.h"
 
 /* global configuration */
 /* category - lookups that identify the logs place in the program */
@@ -9,23 +12,23 @@
 /* rules - the map of categories to their targets and how it should look */
 /* configuration is split into two sections: global and per logger */
 
-/* temporary, for demonstrating the format meme */
+/* will need to be extended and optimised */
 typedef struct {
 	char *in, *out;
 } log_msg_t;
 
 typedef void (*log_fmt_cback)(log_msg_t* msg);
 
-/* would much rather use anonymous function */
 typedef struct {
+	size_t llen;
 	char* leftof;
 	log_fmt_cback c;
-} log_fmt_stpair_t;
+} log_fmtsec_t;
 
 typedef struct {
-	log_fmt_stpair_t* stack;
-	char* left_pool;
-	unsigned short len;
+	log_fmtsec_t* stack; /* vector of log_fmt_stpair_t */
+	char* pool;
+	size_t depth;
 } log_fmt_t;
 
 /*
@@ -43,8 +46,6 @@ typedef struct {
 * %% percent sign
 */
 log_fmt_t log_compile_pattern(const char* fmt);
-
-log_fmt_cback log_interpret_fmt_flag(char flg);
 
 void log_free_fmt(log_fmt_t* const patt);
 

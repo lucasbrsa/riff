@@ -1,25 +1,38 @@
 #ifndef _GENERIC_H
 #define _GENERIC_H
 
-#define generic_max(a, b) ((a > b) ? a : b)
+#include <stddef.h>
+#include <stdint.h>
 
-#define generic_min(a, b) ((a < b) ? a : b)
+/* maximum of a and b */
+#define GEN_MAX(a, b) ((a > b) ? a : b)
 
-#define generic_abs(a) ((a > 0)? a : (-1 * (a)))
+/* minimum of a and b */
+#define GEN_MIN(a, b) ((a < b) ? a : b)
 
-#define generic_len(a) (sizeof(a) / sizeof(*a))
+/* absolute value of a */
+#define GEN_ABS(a) ((a > 0)? a : (-1 * (a)))
 
-#define generic_sign(a) ((a > 0) - (a < 0))
+/* the sign of a */
+#define GEN_SIGN(a) ((a > 0) - (a < 0))
 
-#define generic_square(x) ((x) * (x))
+/* the length of a stack allocated array */
+#define GEN_LEN(a) (sizeof(a) / sizeof(*a))
 
-#define generic_cube(x) ((x) * (x) * (x))
+/* a^2 */
+#define GEN_SQUR(a) ((a) * (a))
 
-#define generic_tobool(x) !!(x)
+/* a^3 */
+#define GEN_CUBE(a) ((a) * (a) * (a))
 
-#define generic_floor(x) ((n) - ((n) % 1))
+/* use double not to formce x to a boolean */
+#define GEN_BOOL(a) (!!(a))
 
-#define generic_ceildiv(x, y)  (((x) + (y) - 1) / (y))
+/* floor of a float/double x */
+#define GEN_FLOOR(a) ((a) - ((a) % 1))
+
+/* the floor of a / b */
+#define GEN_CEIL_DIV(a, b)  (((a) + (b) - 1) / (b))
 
 /* help allow for CPP compilation */
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus) || defined(_MSC_VER)
