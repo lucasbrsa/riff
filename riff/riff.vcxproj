@@ -116,7 +116,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="log.c" />
+    <ClCompile Include="fmt.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="str.c" />
@@ -124,7 +124,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="generic.h" />
-    <ClInclude Include="log.h" />
+    <ClInclude Include="fmt.h" />
     <ClInclude Include="logdef.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="str.h" />

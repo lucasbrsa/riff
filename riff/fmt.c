@@ -1,17 +1,74 @@
-#include "log.h"
+#include "fmt.h"
 #include "str.h"
 
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
+#include <malloc.h>
 
-void log_interpret_flag_m(log_msg_t* msg);
-void log_interpret_flag_t(log_msg_t* msg);
+/* one section of the fmt stack must store... */
+/* the callback for taht fmt flag, or NULL */
+/* left is the pointer to the end of the previous specifier */
+/* len is the precomputed length of the section of the string */
+typedef struct {
+	fmt_symfunc_f callback; 
+	char* left;
+	size_t len;
+} fmt_t;
 
-#define LOG_DFMTC	8
-#define LOG_TBL		32
-#define LOG_BMSGL	128
+fmt_t* fmt_compile(const char* fmt, const fmt_symfunc_f symfunc_lut[26 * 2]) {
+	size_t depth = 0;
+	for (char* c = fmt; *c; c++) {
+		if (*c == '%')
+			depth++, c++;
+	}
 
+	fmt_t* format_stack = malloc(sizeof(fmt_t) * depth + 1);
+	format_stack[depth] = *(fmt_t*)NULL; /* hmmm.... */
+
+	size_t head = 0;
+	char *left_ptr, *itr;
+	for (itr = left_ptr = fmt; *itr; itr++) {
+		if (*itr == '%') {
+			char fmt_chr = *(itr + 1);
+			fmt_chr = str_islatin(fmt_chr) ? str_islower(fmt_chr) ? fmt_chr - 'a' : fmt_chr - 'A' : NULL;
+
+			format_stack[head].left = left_ptr;
+			format_stack[head].callback = *symfunc_lut[fmt_chr];
+
+			if (head)
+				format_stack[head - 1].len = left_ptr - format_stack[head - 1].left;
+			if (head - 1 == depth)
+				format_stack[head].len = (*left_ptr) ? strlen(left_ptr) : 0;
+
+			*itr = left_ptr = NULL;
+			itr++, head++;
+		}
+		else if (!left_ptr)
+			left_ptr = itr;
+	}
+}
+
+void fmt_free(fmt_t* fmt) {
+	if (fmt) {
+		free(fmt);
+	}
+}
+
+void* fmt_output(fmt_t* f, void* itrnpt_strct) {
+	/* determine the number of elements in the stack */
+	/* could be be removed, but I'm not relly bothered */
+	size_t depth = 0;
+	for (fmt_t* it = f; it; it++)
+		depth++;
+
+	size_t it;
+	for (it = 0; it < depth; it++) {
+		/* call the func of what ever */
+		f[it].callback(/* .... */);
+	}
+
+	return itrnpt_strct;
+}
+
+#if 0
 log_fmt_t log_compile_pattern(const char* fmt) {
 	static log_fmt_cback cback_lut[26] = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, log_interpret_flag_m, 0, 0, 0, 0, 0, 0, log_interpret_flag_t, 0, 0, 0, 0, 0, 0
@@ -93,22 +150,4 @@ void log_print_fmt(log_msg_t* msg, log_fmt_t fmt) {
 	msg->out = NULL; /* just to be safe, not really nessisary though */
 }
 
-void log_interpret_flag_m(log_msg_t* msg) {
-	size_t d = strlen(msg->in);
-	msg->out = (char*)memcpy(msg->out, msg->in, d) + d;
-}
-
-void log_interpret_flag_t(log_msg_t* msg) {
-	/* just as example you ass hat */
-	time_t rawtime; time(&rawtime);
-	char* buff = malloc(LOG_TBL);
-	int l;
-
-	strftime(buff, LOG_TBL, "%x %X", localtime(&rawtime));
-	l = strlen(buff);
-
-	memcpy(msg->out, buff, l);
-	msg->out += l - 1;
-
-	free(buff);
-}
+#endif
