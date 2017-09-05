@@ -8,8 +8,11 @@
 #include <float.h>
 
 #define __STR(x) #x
+
 #define __SI64_MAXS ( 10 * sizeof(signed __int64) * CHAR_BIT/33   +3)
+
 #define __UI64_MAXS ( 10 * sizeof(unsigned __int64) * CHAR_BIT/33 +2)
+
 #define __PTR_MAXS sizeof(__STR( SIZE_MAX )) + 1
 
 /* type conversion: signed __int64 to string */
@@ -208,22 +211,17 @@ INLINE str_stble_t* str_split(const char* src, char delimiter, str_stble_t* out)
 INLINE char* str_sfmt_time(time_t t, const char* fmt)
 	{ return str_fmt_time(t, NULL, NULL, fmt); }
 
-/* boolean operations */
 
-#define str_isarabic(c)		((c) >= '0' && (c) <= '9')
+#define STR_ISARABIC(c)		((c) >= '0' && (c) <= '9')
 
-#define str_islower(c)		((c) >= 'a' && (c) <= 'z')
+#define STR_ISLOWER(c)		((c) >= 'a' && (c) <= 'z')
 
-#define str_isupper(c)		((c) >= 'A' && (c) <= 'Z')
+#define STR_ISUPPER(c)		((c) >= 'A' && (c) <= 'Z')
 
-#define str_isspace(c)		((c) == ' ' || ((c) >= '\x09' && (c) <= '\xD'))
+#define STR_ISSPACE(c)		((c) == ' ' || ((c) >= '\x09' && (c) <= '\xD'))
 
-#define str_islatin(c)		( str_islower(c) || str_isupper(c))
+#define STR_ISLATIN(c)		( STR_ISLOWER(c) || STR_ISUPPER(c))
 
-#define str_isalphanum(c)	( str_isarabic(c) || str_islatin(c))
-
-// add more that you think are necessary
-// do not implement functions that already exist in the std c lib
-// ...
+#define STR_ISALPHANUM(c)	( STR_ISARABIC(c) || STR_ISLATIN(c))
 
 #endif

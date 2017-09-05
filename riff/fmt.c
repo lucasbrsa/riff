@@ -1,40 +1,50 @@
 #include "fmt.h"
 #include "str.h"
 
-#include <malloc.h>
-
 /* one section of the fmt stack must store... */
 /* the callback for taht fmt flag, or NULL */
 /* left is the pointer to the end of the previous specifier */
 /* len is the precomputed length of the section of the string */
-typedef struct {
-	fmt_symfunc_f callback; 
+struct fmt_t {
+	fmt_symfunc_f callback;
 	char* left;
 	size_t len;
-} fmt_t;
+};
 
-fmt_t* fmt_compile(const char* fmt, const fmt_symfunc_f symfunc_lut[26 * 2]) {
+fmt_t* fmt_compile(const char* fmt, fmt_symfunc_lut_t lut) {
 	size_t depth = 0;
 	for (char* c = fmt; *c; c++) {
-		if (*c == '%')
+		if (*c == FMT_FMTCHR)
 			depth++, c++;
 	}
 
 	fmt_t* format_stack = malloc(sizeof(fmt_t) * depth + 1);
-	format_stack[depth] = *(fmt_t*)NULL; /* hmmm.... */
+	format_stack[depth - 1].left = NULL; /* hmmm... */
 
+	if (!format_stack)
+		return free(format_stack), NULL;
+	
 	size_t head = 0;
 	char *left_ptr, *itr;
 	for (itr = left_ptr = fmt; *itr; itr++) {
-		if (*itr == '%') {
-			char fmt_chr = *(itr + 1);
-			fmt_chr = str_islatin(fmt_chr) ? str_islower(fmt_chr) ? fmt_chr - 'a' : fmt_chr - 'A' : NULL;
+		char fmt_chr = GEN_MAX(*(itr + 1), NULL);
+
+		if (*itr == FMT_FMTCHR && fmt_chr && !STR_ISLATIN(fmt_chr)) {
+
+#		ifndef FMT_NCASE_SENS
+			fmt_chr = STR_ISLOWER(fmt_chr) ? fmt_chr - 'a' + 26 : fmt_chr - 'A';
+#		else
+			fmt_chr = STR_ISLOWER(fmt_chr) ? fmt_chr - 'a' : fmt_chr - 'A';
+#		endif
+
+			if (!lut[fmt_chr])
+				continue;
 
 			format_stack[head].left = left_ptr;
-			format_stack[head].callback = *symfunc_lut[fmt_chr];
+			format_stack[head].callback = lut[fmt_chr];
 
 			if (head)
-				format_stack[head - 1].len = left_ptr - format_stack[head - 1].left;
+				format_stack[head - 1].len = (left_ptr - 2) - format_stack[head - 1].left;
 			if (head - 1 == depth)
 				format_stack[head].len = (*left_ptr) ? strlen(left_ptr) : 0;
 
@@ -44,6 +54,8 @@ fmt_t* fmt_compile(const char* fmt, const fmt_symfunc_f symfunc_lut[26 * 2]) {
 		else if (!left_ptr)
 			left_ptr = itr;
 	}
+
+	return format_stack;
 }
 
 void fmt_free(fmt_t* fmt) {
@@ -52,23 +64,43 @@ void fmt_free(fmt_t* fmt) {
 	}
 }
 
-void* fmt_output(fmt_t* f, void* itrnpt_strct) {
-	/* determine the number of elements in the stack */
-	/* could be be removed, but I'm not relly bothered */
-	size_t depth = 0;
-	for (fmt_t* it = f; it; it++)
-		depth++;
-
+char* fmt_output(const fmt_t* f, char* alloced_buf, void* itrnpt_strct) {
 	size_t it;
-	for (it = 0; it < depth; it++) {
-		/* call the func of what ever */
-		f[it].callback(/* .... */);
-	}
+	char* rightedge = alloced_buf;
+	for (it = 0; f[it].left; it++) {
+		rightedge = (char*)memcpy(rightedge, f[it].left, f[it].len) + f[it].len;
 
-	return itrnpt_strct;
+		if (*f[it].callback)
+			rightedge = rightedge + (*f[it].callback)(rightedge, itrnpt_strct);
+	}
+	
+	return alloced_buf;
 }
 
 #if 0
+
+void log_print_fmt(log_msg_t* msg, log_fmt_t fmt) {
+	/* msg->out = vector_init(LOG_BMSGL, sizeof(char)); */
+	msg->out = malloc(LOG_BMSGL);
+
+	for (int i = 0; i < fmt.depth; i++) {
+		size_t mlen;
+
+		if (i < fmt.depth - 2)
+			mlen = fmt.stack[i + 1].leftof - fmt.stack[i].leftof;
+		else
+			mlen = strlen(fmt.stack[i].leftof);
+
+		msg->out = (char*)memcpy(msg->out, fmt.stack[i].leftof, mlen) + mlen;
+		if (fmt.stack[i].c)
+			fmt.stack[i].c(msg);
+	}
+
+	puts(msg->out);
+	free(msg->out);
+	msg->out = NULL; /* just to be safe, not really nessisary though */
+}
+
 log_fmt_t log_compile_pattern(const char* fmt) {
 	static log_fmt_cback cback_lut[26] = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, log_interpret_flag_m, 0, 0, 0, 0, 0, 0, log_interpret_flag_t, 0, 0, 0, 0, 0, 0
@@ -126,28 +158,6 @@ void log_free_fmt(log_fmt_t* const patt) {
 		patt->pool = NULL;
 		patt->stack = NULL;
 	}
-}
-
-void log_print_fmt(log_msg_t* msg, log_fmt_t fmt) {
-	/* msg->out = vector_init(LOG_BMSGL, sizeof(char)); */
-	msg->out = malloc(LOG_BMSGL);
-	
-	for (int i = 0; i < fmt.depth; i++) {
-		size_t mlen;
-		
-		if (i < fmt.depth - 2)
-			mlen = fmt.stack[i + 1].leftof - fmt.stack[i].leftof;
-		else
-			mlen = strlen(fmt.stack[i].leftof);
-
-		msg->out = (char*)memcpy(msg->out, fmt.stack[i].leftof, mlen) + mlen;
-		if (fmt.stack[i].c)
-			fmt.stack[i].c(msg);
-	}
-
-	puts(msg->out);
-	free(msg->out);
-	msg->out = NULL; /* just to be safe, not really nessisary though */
 }
 
 #endif

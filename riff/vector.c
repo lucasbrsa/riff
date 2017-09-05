@@ -47,7 +47,7 @@ vector_t* vector_init(size_t start_len, size_t element_size, vector_del_f* delet
 	vector_t* v = malloc(sizeof(vector_t));
 
 	if (v) {
-		start_len = generic_max(start_len, VECTOR_MINSIZE);
+		start_len = GEN_MAX(start_len, VECTOR_MINSIZE);
 
 		v->data = v->size = 0;
 		v->blksz = element_size;
