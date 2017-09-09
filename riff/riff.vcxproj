@@ -117,6 +117,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="fmt.c" />
+    <ClCompile Include="hashmap.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="str.c" />
@@ -125,6 +126,8 @@
   <ItemGroup>
     <ClInclude Include="generic.h" />
     <ClInclude Include="fmt.h" />
+    <ClInclude Include="hashmap.h" />
+    <ClInclude Include="helper.h" />
     <ClInclude Include="logdef.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="str.h" />
