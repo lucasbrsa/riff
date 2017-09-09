@@ -59,3 +59,29 @@ size_t __fmt_msg(char* out, void* itrpt_strct) {
 	memcpy(out, k, len);
 	return len;
 }
+
+/* 
+
+/* oh L A R I S S A, don't hurt me ! */
+#include <stdio.h>
+#include "hashmap.h"
+
+int main(int argc, char ** argv)
+{
+	/* create hashmap */
+	hashmap h = hashmap_create(10);
+
+	/* set value */
+	hashmap_set(&h, "name", "cool");
+
+	/* see if it can retrieve it */
+	puts((char*)hashmap_get(&h, "name"));
+
+	/* good work, celina! */
+	puts("\nDone");
+
+	/* wait before quitting */
+	getchar(); return 0;
+}
+
+*/
