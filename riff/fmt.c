@@ -13,13 +13,15 @@ struct fmt_t {
 
 fmt_t* fmt_compile(const char* fmt, fmt_symfunc_lut_t lut) {
 	size_t depth = 0;
-	for (char* c = fmt; *c; c++) {
+	char* c;
+	for (c = fmt; *c; c++) {
 		if (*c == FMT_FMTCHR)
 			depth++, c++;
 	}
 
+	// no matter what add another member, where the callback is NULL; acting as terminator
 	fmt_t* format_stack = malloc(sizeof(fmt_t) * depth + 1);
-	format_stack[depth - 1].left = NULL; /* hmmm... */
+	format_stack[depth - 1].callback = NULL;
 
 	if (!format_stack)
 		return free(format_stack), NULL;

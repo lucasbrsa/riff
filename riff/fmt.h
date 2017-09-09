@@ -1,6 +1,4 @@
 // @TODO pass format modifiers to the callback
-// @TODO make the fuckin thing compile
-// @TODO make the fuckin thing link
 // @TODO make the fuckin thing not crash
 // @TODO make the fuckin thing work for one test case
 // @TODO make the fuckin thing work for two test cases

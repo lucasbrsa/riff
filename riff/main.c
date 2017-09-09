@@ -27,10 +27,11 @@ static fmt_symfunc_f flut[26 * 2] = {
 #undef m
 };
 
-#define fmt_str "date: %d, time: %t, message: %m, internal float: %f"
+#define fmt_str "date: %d, time: %t, message: %m, internal float: %f more txt.."
+// #define fmt_str "%%%d%k%^date: %d, time: %t, message: %m, internal float: %f"
 
 int main() {
-	char* buf_src = str_dup("date: %d, time: %t, message: %m, internal float: %f");
+	char* buf_src = str_dup(fmt_str);
 	continuous_data_t dt = { .intern = 3.14159,.msg = "sample message!" };
 	fmt_t* f = fmt_compile(buf_src, flut);
 	fmt_print(f, stdout, (void*)&dt, 512);
