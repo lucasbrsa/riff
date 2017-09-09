@@ -1,14 +1,7 @@
-#if 1
+#ifndef _HASHMAP_H
+#define _HASHMAP_H
 #include "hashmap.h"
-
 #include <malloc.h>
-
-hashmap_bucket bucket_create(char* key, void* value, hashmap_bucket* next);
-unsigned int get_hashcode(char* key);
-unsigned int get_index(int hashcode);
-int power(int base, int exponent);
-_Bool insert(hashmap_bucket* list, char* key, void* value);
-void* search(hashmap* map, char* key);
 
 unsigned int get_hashcode(char* key) {
 	unsigned int hashcode = 0;
@@ -26,10 +19,9 @@ unsigned int get_index(unsigned hashcode, size_t s) {
 }
 
 hashmap hashmap_create(size_t size) {
-	hashmap h = *(hashmap*)malloc(sizeof(hashmap));
-	for (int i = 0; i < size; i++)
-		h.buckets[i] = bucket_create(tmp, 0);
-
+	hashmap h;
+	h.buckets = calloc(sizeof(bucket), size);
+	h.size = size;
 	return h;
 }
 
@@ -41,7 +33,6 @@ void hashmap_free(hashmap* map) {
 }
 
 _Bool hashmap_set(hashmap* map, char* key, void* value) {
-	map->buckets[get_index(get_hashcode(key), map->size)].value = "meme";
 	return insert(&map->buckets[get_index(get_hashcode(key), map->size)], key, value);
 }
 
@@ -60,22 +51,21 @@ int power(int base, int exponent) {
 }
 
 hashmap_bucket bucket_create(char* key, void* value, hashmap_bucket* next) {
-	hashmap_bucket* b = malloc(sizeof(hashmap_bucket));
-	//b->data = hashmap_pair_create(data.key, data.value);
-	b->next = next;
-	return *b;
+	hashmap_bucket hb;
+	hb.key = key;
+	hb.value = value;
+	hb.next = next;
+	return b;
 }
 
-_Bool insert(hashmap_bucket* list, char* key, void* value) {
-		
-	hashmap_bucket* current = list;
-	
-	while (current->next != NULL) 
-		current = current->next;
-	current->key = key;
-	current->value = value;
-	current->next = NULL;
-	
+_Bool insert(hashmap_bucket* head, char* key, void* value) {
+
+	hashmap_bucket hb;
+	hb.next = head.next;
+	head.next = &hb;
+	hb.key = key;
+	hb.value = value;
+
 	return 1;
 }
 
@@ -88,8 +78,7 @@ void* search(hashmap* map, char* key) {
 		current = current->next;
 	} while (current->next != NULL);
 
-	return 0;
-	//return (*map).buckets[get_index(get_hashcode(key))].data.value;
+	return NULL;
 }
 
 void* hashmap_resize(hashmap* map, size_t new_size)
