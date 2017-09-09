@@ -3,14 +3,12 @@
 
 int main(int argc, char ** argv)
 {
-	hashmap h = hashmap_create();
 
+	hashmap h = hashmap_create(10);
 
-	hashmap_pair p = hashmap_pair_create("Larissa", "iis cool!!!");
-	set(&h, p);
+	hashmap_set(&h, "name", "ruchir");
 
-
-	printf("\n\nKEY OUTPUTED: %s\n\n", get(&h, "larissa"));
+	puts(hashmap_get(&h, "name"));
 
 	getchar(); return 0;
 }
