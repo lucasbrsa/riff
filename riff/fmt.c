@@ -1,79 +1,85 @@
+#include <assert.h>
+
 #include "fmt.h"
 #include "str.h"
 
-/* one section of the fmt stack must store... */
-/* the callback for taht fmt flag, or NULL */
-/* left is the pointer to the end of the previous specifier */
-/* len is the precomputed length of the section of the string */
-struct fmt_t {
-	fmt_symfunc_f callback;
-	char* left;
-	size_t len;
+/* unions cannot store their current type (for fuck's sake dennis) */
+enum fmt_utype {
+	FMT_UTYPE_STRING, FMT_UTYPE_CALLBACK
 };
 
-fmt_t* fmt_compile(const char* fmt, fmt_symfunc_lut_t lut) {
-	size_t depth = 0;
-	char* c;
-	for (c = fmt; *c; c++) {
-		if (*c == FMT_FMTCHR)
-			depth++, c++;
-	}
+/* str fmt */
+typedef struct {
+	char* data;
+	size_t len;
+} fmt_str;
 
-	// no matter what add another member, where the callback is NULL; acting as terminator
-	fmt_t* format_stack = malloc(sizeof(fmt_t) * depth + 1);
-	format_stack[depth - 1].callback = NULL;
+/* any member of the fmt vector may be one of the two m types */
+typedef struct {
+	union {
+		fmt_symfunc_f callback;
+		fmt_str left;
+	} m;
+	enum fmt_utype t;
+} fmt_pair_t;
 
-	if (!format_stack)
-		return free(format_stack), NULL;
-	
-	size_t head = 0;
+
+char* fmt_output(const fmt_t* fmt, char* alloced_buf, void* itrnpt_strct);
+
+fmt_t* fmt_compile(const char* pattern, hashmap_t* lut) {
+	fmt_t* f = malloc(sizeof(f));
+	vector_t* fmtv = vector_init(8, sizeof(fmt_pair_t), NULL);
+	f->stack = fmtv;
+
+	if (!f || !fmtv)
+		return NULL;
+
 	char *left_ptr, *itr;
-	for (itr = left_ptr = fmt; *itr; itr++) {
-		char fmt_chr = GEN_MAX(*(itr + 1), NULL);
+	for (itr = left_ptr = pattern; *itr; itr++) {
+		if (*itr == '%') {
+			if (left_ptr) {
+				fmt_str s = { .data = left_ptr,.len = itr - left_ptr };
+				fmt_pair_t p = (fmt_pair_t){
+					.m = &s, .t = FMT_UTYPE_STRING };
+				vector_push_back(fmtv, &p);
+				*itr = left_ptr = NULL;
+			}
 
-		if (*itr == FMT_FMTCHR && fmt_chr && !STR_ISLATIN(fmt_chr)) {
-
-#		ifndef FMT_NCASE_SENS
-			fmt_chr = STR_ISLOWER(fmt_chr) ? fmt_chr - 'a' + 26 : fmt_chr - 'A';
-#		else
-			fmt_chr = STR_ISLOWER(fmt_chr) ? fmt_chr - 'a' : fmt_chr - 'A';
-#		endif
-
-			if (!lut[fmt_chr])
-				continue;
-
-			format_stack[head].left = left_ptr;
-			format_stack[head].callback = lut[fmt_chr];
-
-			if (head)
-				format_stack[head - 1].len = (left_ptr - 2) - format_stack[head - 1].left;
-			if (head - 1 == depth)
-				format_stack[head].len = (*left_ptr) ? strlen(left_ptr) : 0;
-
-			*itr = left_ptr = NULL;
-			itr++, head++;
+			if (*++itr) {
+				fmt_pair_t p = { .m = hashmap_get(&lut, itr), .t = FMT_UTYPE_CALLBACK };
+				vector_push_back(fmtv, &p);
+			}
+			else
+				break;
 		}
-		else if (!left_ptr)
-			left_ptr = itr;
+		else {
+			if (!left_ptr)
+				left_ptr = itr;
+		}
 	}
 
-	return format_stack;
+	return f;
 }
 
 void fmt_free(fmt_t* fmt) {
 	if (fmt) {
+		vector_free(fmt->stack);
 		free(fmt);
 	}
 }
 
 char* fmt_output(const fmt_t* f, char* alloced_buf, void* itrnpt_strct) {
-	size_t it;
-	char* rightedge = alloced_buf;
-	for (it = 0; f[it].left; it++) {
-		rightedge = (char*)memcpy(rightedge, f[it].left, f[it].len) + f[it].len;
+	for (int i = 0; i < f->stack->size; i++) {
+		fmt_pair_t p = *(fmt_pair_t*)vector_at(f->stack, i);
 
-		if (*f[it].callback)
-			rightedge = rightedge + (*f[it].callback)(rightedge, itrnpt_strct);
+		switch (p.t) {
+			case FMT_UTYPE_STRING:
+				alloced_buf = memcpy(alloced_buf, p.m.left.data, p.m.left.len);
+				break;
+			case FMT_UTYPE_CALLBACK:
+				alloced_buf += p.m.callback(alloced_buf, itrnpt_strct);
+				break;
+		}
 	}
 	
 	return alloced_buf;

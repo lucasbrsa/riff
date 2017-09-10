@@ -1,4 +1,5 @@
-/*
+#define FMT_NCASE_SENS
+
 #include "vector.h"
 #include "fmt.h"
 #include "str.h"
@@ -15,21 +16,21 @@ size_t __fmt_date(char* out, void* itrpt_strct);
 size_t __fmt_float(char* out, void* itrpt_strct);
 size_t __fmt_msg(char* out, void* itrpt_strct);
 
-static fmt_symfunc_f flut[26 * 2] = {
+static fmt_symfunc_f flut[26*2] = {
 #define t __fmt_time
 #define d __fmt_date
 #define f __fmt_float
 #define m __fmt_msg
-	   0,0,0,d,0,f,0,0,0,0,0,0,m,0,0,0,0,0,0,t,0,0,0,0,0,0,
-	   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	0,0,0,d,0,f,0,0,0,0,0,0,m,0,0,0,0,0,0,t,0,0,0,0,0,0,
+	0,0,0,d,0,f,0,0,0,0,0,0,m,0,0,0,0,0,0,t,0,0,0,0,0,0
 #undef t
 #undef d
 #undef f
 #undef m
 };
 
-#define fmt_str "date: %d, time: %t, message: %m, internal float: %f more txt.."
-// #define fmt_str "%%%d%k%^date: %d, time: %t, message: %m, internal float: %f"
+ #define fmt_str "date: %d, time: %t, message: %m, internal float: %f more txt.."
+// #define fmt_str "%t%%%d" /*"%k%^"*/ "date: %d, time: %t, message: %m, internal float: %f"
 
 int main() {
 	char* buf_src = str_dup(fmt_str);
@@ -61,8 +62,7 @@ size_t __fmt_msg(char* out, void* itrpt_strct) {
 	return len;
 }
 
-*/
-
+#if 0
 /* oh L A R I S S A, don't hurt me ! */
 #include <stdio.h>
 #include "hashmap.h"
@@ -93,3 +93,4 @@ int main(int argc, char ** argv)
 
 	getchar(); return 0;
 }
+#endif
