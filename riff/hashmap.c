@@ -121,6 +121,8 @@ _Bool insert(hashmap_bucket_t* head, char* key, void* value) {
 		head->key = key;
 		head->value = value;
 		head->next = malloc(sizeof(hashmap_bucket_t));
+		head->next->key = NULL;
+		head->next->value = NULL;
 	}
 
 ret:

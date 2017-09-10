@@ -72,11 +72,12 @@ int main(int argc, char ** argv)
 	hashmap_t* h = hashmap_create(10);
 
 	hashmap_set(h, "age", "15");
-	hashmap_set(h, "sex", "none");
+	hashmap_set(h, "sex", "f e m a l e");
 	hashmap_set(h, "gf", "jenny");
 	hashmap_set(h, "gf", "celina");
 	hashmap_set(h, "gf", "priya");
 	hashmap_set(h, "gf", "isabelle");
+	
 
 	/*for (hashmap_bucket_t* it = hashmap_begin(h); it != hashmap_end(h); hashmap_next(it))
 		if (it->key && it->value)
@@ -85,6 +86,12 @@ int main(int argc, char ** argv)
 
 	for (int i = 0; i < 10; i++) {
 		printf("bucket [%i]\n-----------\n", i);
+		hashmap_bucket_t b = h->buckets[i];
+		while (b.next && b.key && b.value) {
+			printf("%s : %s\n", b.key, b.value);
+			b = *b.next;
+		}
+		putc('\n', stdout);
 	}
 	
 
