@@ -1,4 +1,3 @@
-/* includes */
 #include "hashmap.h"
 
 #include <malloc.h>
@@ -13,18 +12,13 @@ unsigned int get_index(unsigned hashcode, size_t s);
 int power(int base, int exponent);
 
 /* insert data into the hashmap */
-_Bool insert(hashmap_bucket* list, char* key, void* value);
+_Bool insert(hashmap_bucket_t* list, char* key, void* value);
 
 /* search for a key-value pair in the hashmap */
-void* search(hashmap* map, char* key);
+void* search(hashmap_t* map, char* key);
 
-/* hashes a key */
 unsigned int get_hashcode(char* key) {
-	
-	/* shitty implementation */
 	unsigned int hashcode = 0;
-
-	/* why */
 	const char* str = (char*)key;
 
 	/* uses the Java hashing algorithm */
@@ -35,55 +29,41 @@ unsigned int get_hashcode(char* key) {
 	return hashcode;
 }
 
-/* get the bucket index from the hashmap */
 unsigned int get_index(unsigned hashcode, size_t s) {
 	return +(hashcode % s); /* std::abs is too kool for me */
 }
 
-/* create a hashmap, anon's favourite function! */
-hashmap hashmap_create(size_t size) {
-	
-	hashmap h;
+hashmap_t* hashmap_create(size_t size) {
+	hashmap_t* h = malloc(sizeof(hashmap_t));
 
-	/* callocate memory for the buckets */ /* i'm funny */
-	h.buckets = calloc(sizeof(hashmap_bucket), size);
-	
-	/* set size */
-	h.size = size;
-	
-	/* ret */
+	if (h) {
+		h->buckets = calloc(sizeof(hashmap_bucket_t), size);
+
+		h->size = size;
+	}
+
 	return h;
 }
 
-/* free the mem used by the lame hash map */
-void hashmap_free(hashmap* map) {
-
-	/* iterate and call free() on all the memes */
+void hashmap_free(hashmap_t* map) {
 	for (int i = 0; i < map->size; i++)
 		free((void*)&map->buckets[i]);
 
 	free(map);
 }
 
-/* set a value in the hashmap */
-_Bool hashmap_set(hashmap* map, char* key, void* value) {
-	
+_Bool hashmap_set(hashmap_t* map, char* key, void* value) {
 	/* calculate the bucket we'll be inserting into */
-	hashmap_bucket* hb = &map->buckets[get_index(get_hashcode(key), map->size)];
+	hashmap_bucket_t* hb = &map->buckets[get_index(get_hashcode(key), map->size)];
 	
-	/* insert */
 	return insert(hb, key, value);
 }
 
-/* get a value associated to a key from a hashmap */
-void* hashmap_get(hashmap* map, char* key) {
-	/* call the linked-list searcher */
+void* hashmap_get(hashmap_t* map, char* key) {
 	return search(map, key);
 }
 
-/* raise a number, lame meme */
 int power(int base, int exponent) {
-	
 	/* so we don't get caught out!1!! */
 	if (!exponent) return 1;
 
@@ -95,23 +75,17 @@ int power(int base, int exponent) {
 	return result;
 }
 
-/* insert into a linked list */
-_Bool insert(hashmap_bucket* head, char* key, void* value) {
-
-	/* check if the linked list is not sized 1 */
+_Bool insert(hashmap_bucket_t* head, char* key, void* value) {
 	if (head->next != NULL)
 	{
-		/* bucket to add */
-		hashmap_bucket* hb = malloc(sizeof(hashmap_bucket));
+		hashmap_bucket_t* hb = malloc(sizeof(hashmap_bucket_t));
 		
-		/* set properties */
 		hb->next = head->next;
 		hb->key = key;
 		hb->value = value;
 		head->next = hb;
 
 	} else {
-		/* inserting into the first element */
 		head->key = key;
 		head->value = value;
 	}
@@ -119,13 +93,12 @@ _Bool insert(hashmap_bucket* head, char* key, void* value) {
 	return 1;
 }
 
-/* search in a linked list */
-void* search(hashmap* map, char* key) {
+void* search(hashmap_t* map, char* key) {
 	/* calculate which bucket is of interest */
-	hashmap_bucket* current = &(map->buckets[get_index(get_hashcode(key), map->size)]);
+	hashmap_bucket_t* current = &(map->buckets[get_index(get_hashcode(key), map->size)]);
 
 	/* step through, checking if the key matches and return if it does */
-	do { /* at least once */
+	do {
 		if (current->key == key)
 			return current->value;
 		current = current->next;
@@ -134,9 +107,7 @@ void* search(hashmap* map, char* key) {
 	return NULL;
 }
 
-/* resize the hashmap */
-void* hashmap_resize(hashmap* map, size_t new_size)
+void* hashmap_resize(hashmap_t* map, size_t new_size)
 {
-	/* reallocate memory */
 	return realloc(map, sizeof(map) * new_size);
 }

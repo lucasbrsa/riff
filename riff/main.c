@@ -1,3 +1,4 @@
+/*
 #include "vector.h"
 #include "fmt.h"
 #include "str.h"
@@ -60,7 +61,7 @@ size_t __fmt_msg(char* out, void* itrpt_strct) {
 	return len;
 }
 
-/* 
+*/
 
 /* oh L A R I S S A, don't hurt me ! */
 #include <stdio.h>
@@ -68,20 +69,19 @@ size_t __fmt_msg(char* out, void* itrpt_strct) {
 
 int main(int argc, char ** argv)
 {
-	/* create hashmap */
-	hashmap h = hashmap_create(10);
+	hashmap_t* h = hashmap_create(10);
 
-	/* set value */
-	hashmap_set(&h, "name", "cool");
+	hashmap_set(h, "age", "15");
+	hashmap_set(h, "sex", "none");
+	hashmap_set(h, "gf", "jenny");
+	hashmap_set(h, "gf", "celina");
+	hashmap_set(h, "gf", "priya");
+	hashmap_set(h, "gf", "isabelle");
 
-	/* see if it can retrieve it */
-	puts((char*)hashmap_get(&h, "name"));
+	for (hashmap_bucket_t* it = hashmap_begin(h); it != hashmap_end(h); hashmap_next(it))
+		if (it->key && it->value)
+			printf("%p\t%s\t%s\n", it, it->key, (char*)it->value);
 
-	/* good work, celina! */
-	puts("\nDone");
-
-	/* wait before quitting */
+	printf("my current girlfriend is: %s\n", (char*)hashmap_get(&h, "gf"));
 	getchar(); return 0;
 }
-
-*/
