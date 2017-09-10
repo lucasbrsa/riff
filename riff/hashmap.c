@@ -55,7 +55,7 @@ void hashmap_free(hashmap_t* map) {
 _Bool hashmap_set(hashmap_t* map, char* key, void* value) {
 	/* calculate the bucket we'll be inserting into */
 	hashmap_bucket_t* hb = &map->buckets[get_index(get_hashcode(key), map->size)];
-	
+
 	return insert(hb, key, value);
 }
 
@@ -76,6 +76,9 @@ int power(int base, int exponent) {
 }
 
 _Bool insert(hashmap_bucket_t* head, char* key, void* value) {
+	
+#if 0
+
 	if (head->next != NULL)
 	{
 		hashmap_bucket_t* hb = malloc(sizeof(hashmap_bucket_t));
@@ -88,8 +91,39 @@ _Bool insert(hashmap_bucket_t* head, char* key, void* value) {
 	} else {
 		head->key = key;
 		head->value = value;
+		head->next = malloc(sizeof(hashmap_bucket_t));
 	}
-	
+
+#endif
+
+	if (head->next != NULL)
+	{
+
+		hashmap_bucket_t* current = head;
+
+		do {
+			if (current->key == key) {
+				current->value = value;
+				goto ret;
+			}
+			current = current->next;
+		} while (current->next != NULL);
+
+		hashmap_bucket_t* hb = malloc(sizeof(hashmap_bucket_t));
+
+		hb->next = head->next;
+		hb->key = key;
+		hb->value = value;
+		head->next = hb;
+
+	}
+	else {
+		head->key = key;
+		head->value = value;
+		head->next = malloc(sizeof(hashmap_bucket_t));
+	}
+
+ret:
 	return 1;
 }
 

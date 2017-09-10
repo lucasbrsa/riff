@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{15DEDB53-C04A-4B6F-944F-C316D8D43F40}</ProjectGuid>
     <RootNamespace>riff</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -116,22 +116,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="context.c" />
     <ClCompile Include="fmt.c" />
     <ClCompile Include="hashmap.c" />
+    <ClCompile Include="input.c" />
     <ClCompile Include="logging.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="str.c" />
     <ClCompile Include="vector.c" />
+    <ClCompile Include="window.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="context.h" />
     <ClInclude Include="generic.h" />
     <ClInclude Include="fmt.h" />
     <ClInclude Include="hashmap.h" />
     <ClInclude Include="helper.h" />
+    <ClInclude Include="input.h" />
     <ClInclude Include="logdef.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="str.h" />
+    <ClInclude Include="tinydeflate.h" />
     <ClInclude Include="vector.h" />
+    <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\resources\buidling.bmp" />

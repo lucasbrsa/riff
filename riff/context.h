@@ -1,3 +1,4 @@
+#if 0
 #include <glew\glew.h>
 #include <glfw\glfw3.h>
 
@@ -8,3 +9,4 @@ typedef struct context_t {
 } context;
 
 context create_context(unsigned width, unsigned height, char* name);
+#endif

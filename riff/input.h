@@ -1,3 +1,4 @@
+#if 0
 #include <glfw\glfw3.h>
 
 struct input_t {
@@ -11,3 +12,4 @@ static struct input_t input;
 _Bool get_key(unsigned keycode);
 _Bool get_key_down(unsigned keycode);
 _Bool get_key_up(unsigned keycode);
+#endif

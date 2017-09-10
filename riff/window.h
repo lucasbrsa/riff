@@ -1,3 +1,4 @@
+#if 0
 #include <stdio.h>
 #include <glfw\glfw3.h>
 
@@ -9,3 +10,4 @@ typedef struct window_t {
 } window;
 
 window create_window(unsigned width, unsigned height, char* name);
+#endif

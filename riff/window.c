@@ -1,3 +1,4 @@
+#if 0
 #include "window.h"
 
 window create_window(unsigned width, unsigned height, char* name)
@@ -12,3 +13,4 @@ window create_window(unsigned width, unsigned height, char* name)
 	}
 	return w;
 }
+#endif

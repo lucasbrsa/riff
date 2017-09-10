@@ -78,10 +78,18 @@ int main(int argc, char ** argv)
 	hashmap_set(h, "gf", "priya");
 	hashmap_set(h, "gf", "isabelle");
 
-	for (hashmap_bucket_t* it = hashmap_begin(h); it != hashmap_end(h); hashmap_next(it))
+	/*for (hashmap_bucket_t* it = hashmap_begin(h); it != hashmap_end(h); hashmap_next(it))
 		if (it->key && it->value)
 			printf("%p\t%s\t%s\n", it, it->key, (char*)it->value);
+	*/
 
-	printf("my current girlfriend is: %s\n", (char*)hashmap_get(&h, "gf"));
+	for (int i = 0; i < 10; i++) {
+		printf("bucket [%i]\n-----------\n", i);
+	}
+	
+
+	//printf("my current girlfriend is: %s\n", (char*)hashmap_get(h, "gf"));
+
+
 	getchar(); return 0;
 }

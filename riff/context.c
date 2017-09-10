@@ -1,3 +1,4 @@
+#if 0
 #include "context.h"
 
 context create_context(unsigned width, unsigned height, char* name) {
@@ -21,3 +22,4 @@ context create_context(unsigned width, unsigned height, char* name) {
 	
 	return c;
 }
+#endif
