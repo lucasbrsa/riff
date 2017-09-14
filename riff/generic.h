@@ -5,63 +5,40 @@
 #include <stdint.h>
 
 /* maximum of a and b */
-#define GEN_MAX(a, b) ((a > b) ? a : b)
+#define MAX(a, b) ((a > b) ? a : b)
 
 /* minimum of a and b */
-#define GEN_MIN(a, b) ((a < b) ? a : b)
+#define MIN(a, b) ((a < b) ? a : b)
 
 /* absolute value of a */
-#define GEN_ABS(a) ((a > 0)? a : (-1 * (a)))
+#define ABS(a) ((a > 0)? a : (-1 * (a)))
 
 /* the sign of a */
-#define GEN_SIGN(a) ((a > 0) - (a < 0))
-
-/* the length of a stack allocated array */
-#define GEN_LEN(a) (sizeof(a) / sizeof(*a))
+#define SIGN(a) ((a > 0) - (a < 0))
 
 /* a^2 */
-#define GEN_SQUR(a) ((a) * (a))
-
-/* a^3 */
-#define GEN_CUBE(a) ((a) * (a) * (a))
-
-/* use double not to formce x to a boolean */
-#define GEN_BOOL(a) (!!(a))
+#define SQUR(a) ((a) * (a))
 
 /* floor of a float/double x */
-#define GEN_FLOOR(a) ((a) - ((a) % 1))
+#define FLOOR(a) ((a) - ((a) % 1))
 
 /* the floor of a / b */
-#define GEN_CEIL_DIV(a, b)  (((a) + (b) - 1) / (b))
+#define CEILD(a, b)  (((a) + (b) - 1) / (b))
 
-/* help allow for CPP compilation */
-#if __STDC_VERSION__ >= 199901L || defined(__cplusplus) || defined(_MSC_VER)
-#	define INLINE inline
-#else
-#	define INLINE /* */
-#endif
+/* type based swapper, to be used in most situations */
+#define SWAP(a, b, type) \
+	do { (type) __swap__ = a; a = b; b = __swap__; } while(0)
 
-#if _WIN64 /* should be a better cross compiler way */
-typedef signed long long ssize_t;
-#else
-typedef signed long ssize_t;
-#endif
-
-/* stdbool and stddef replacment */
-#if 1
-#	ifndef __cplusplus
-#		define bool	_Bool
-#		define false	0
-#		define true	1
-#	endif
-#	ifndef NULL
-#		ifdef __cplusplus
-#			define NULL 0
-#		else
-#			define NULL ((void *)0)
-#		endif
-#	endif
-#endif
+/* (super inefficient) byte by byte swapper */
+#define BSWAP(a, b, blen) \
+	do { \
+		char __tmp; \
+		for (size_t i = 0; i < blen;) { \
+			__tmp = *((char*)(a) + i); \
+			*((char*)(a) + i) = *((char*)(b) + i); \
+			*((char*)(b) + i) = __tmp; \
+		} \
+	} while(0)
 
 /* determine compiler */
 #if defined(__clang__)
@@ -131,6 +108,52 @@ typedef signed long ssize_t;
 #	define OS_POSIX
 #else
 #	define OS_UNKNOWN
+#endif
+
+/* modify some keywords to be more cross platform */
+
+/* help allow for CPP compilation */
+#if __STDC_VERSION__ >= 199901L || defined(__cplusplus) || defined(_MSC_VER)
+#	define INLINE inline
+#else
+#	define INLINE /* */
+#endif
+
+#if _WIN64 /* should be a better cross compiler way */
+typedef signed long long ssize_t;
+#else
+typedef signed long ssize_t;
+#endif
+
+/* stdbool and stddef replacment */
+#if 1
+#	ifndef __cplusplus
+#		define bool	_Bool
+#		define false	0
+#		define true	1
+#	endif
+#	ifndef NULL
+#		ifdef __cplusplus
+#			define NULL 0
+#		else
+#			define NULL ((void *)0)
+#		endif
+#	endif
+#endif
+
+#ifdef OS_WINDOWS
+#	define __func__ __FUNCTION__
+#endif
+#ifndef __func__
+#	define __func__ "<anonymous>"
+#endif
+
+#ifndef va_copy
+#	ifdef __va_copy
+#		define va_copy __va_copy
+#	else
+#		define va_copy(d, s) ((d) = (s))
+#	endif
 #endif
 
 #endif

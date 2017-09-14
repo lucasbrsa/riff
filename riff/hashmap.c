@@ -76,13 +76,13 @@ int power(int base, int exponent) {
 }
 
 _Bool insert(hashmap_bucket_t* head, char* key, void* value) {
-	
+
 #if 0
 
 	if (head->next != NULL)
 	{
 		hashmap_bucket_t* hb = malloc(sizeof(hashmap_bucket_t));
-		
+
 		hb->next = head->next;
 		hb->key = key;
 		hb->value = value;

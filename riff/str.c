@@ -13,7 +13,7 @@
  * memmove
  */
 
-char* str_uits(unsigned __int64 u, char buf[__UI64_MAXS]) {
+char* str_uits(uint64_t u, char buf[__UI64_MAXS]) {
 	static const char dpair_lut[] =
 		"00010203040506070809"
 		"10111213141516171819"
@@ -41,7 +41,7 @@ char* str_uits(unsigned __int64 u, char buf[__UI64_MAXS]) {
 		*--end = '0' + u;
 		return end;
 	}
-	
+
 	carry = ((u % 100) << 1) + 1;
 	*--end = dpair_lut[carry--];
 	*--end = dpair_lut[carry];
@@ -49,12 +49,13 @@ char* str_uits(unsigned __int64 u, char buf[__UI64_MAXS]) {
 	return end;
 }
 
-char* str_sits(signed __int64 s, char buf[__SI64_MAXS]) {
+char* str_sits(int64_t s, char buf[__SI64_MAXS]) {
 	buf = str_uits(s, buf);
 
-	if ((!!s) | -(int)((unsigned)s >> (63)))
+	// if ((!!s) | -(int)((unsigned)s >> (63)))
+	if (s < 0)
 		*--buf = '-';
-	
+
 	return buf;
 }
 
@@ -66,7 +67,7 @@ char* str_rstrip(char* buf) {
 		mbit--;
 	} while (len-- && STR_ISSPACE(*mbit));
 
-	*(mbit + 1) = NULL;
+	*(mbit + 1) = 0;
 	return buf;
 }
 
@@ -84,12 +85,13 @@ str_ttble_t* str_gen_ttble(const char* keys, const char* vals) {
 	/* assert(strlen(keys) == strlen(vals)) */
 
 	str_ttble_t* t = malloc(sizeof(str_ttble_t));
-	
+
 	int it;
-	for (it = 0; it < 256; it++) 
+	for (it = 0; it < 256; it++)
 		t->lut[it] = it;
-	
-	while (*keys && *vals) t->lut[*keys++] = *vals++;
+
+	while (*keys && *vals)
+		t->lut[(size_t)*keys++] = *vals++;
 
 	return t;
 }
@@ -97,17 +99,17 @@ str_ttble_t* str_gen_ttble(const char* keys, const char* vals) {
 char* str_trans_cpy(str_ttble_t* t, char* dest, const char* src) {
 	char* d = dest;
 	while(*src) {
-		*d++ = t->lut[*src++];
+		*d++ = t->lut[(size_t)*src++];
 	}
 
-	*d = NULL;
+	*d = 0;
 	return dest;
 }
 
 char* str_trans(str_ttble_t* t, char* buf) {
 	char* mbyte = buf;
 	do {
-		*mbyte = t->lut[*mbyte];
+		*mbyte = t->lut[(size_t)*mbyte];
 	} while (*mbyte++);
 
 	return buf;
@@ -118,20 +120,21 @@ void str_free_ttble(str_ttble_t* t) {
 }
 
 char* str_filter(char* dest, const char* src, _Bool(func)(char)) {
-	for (char* c = src; *c; c++)
+	for (const char* c = src; *c; c++)
 		if ((*func)(*c))
 			*dest++ = *c;
-	
-	*dest = NULL;
+
+	*dest = 0;
+	return dest;
 }
 
 size_t str_find_substr(const char* src, const char* sub) {
 	static str_tok_t ssrc = { NULL };
-	if (src) { 
-		ssrc.begoff = 0; 
-		ssrc.tsrc = src; 
+	if (src) {
+		ssrc.begoff = 0;
+		ssrc.tsrc = src;
 	}
-	
+
 	size_t sublen = strlen(sub), head = ssrc.begoff, tail;
 	do {
 		for (tail = 0; *(ssrc.tsrc + head + tail) == *(sub + tail); tail++) { }
@@ -141,7 +144,7 @@ size_t str_find_substr(const char* src, const char* sub) {
 		}
 	} while (*(ssrc.tsrc + head++));
 
-	return NULL;
+	return 0;
 }
 
 size_t str_find_substr_count(const char* src, const char* sub) {
@@ -149,12 +152,12 @@ size_t str_find_substr_count(const char* src, const char* sub) {
 
 	do {
 		for (it = 0; *(src + it) == *(sub + it) && *(src + it); it++) { }
-		if (it == l) { 
-			cntr++; 
+		if (it == l) {
+			cntr++;
 		} src += (it>0)?it:1;
 
 	} while (*src);
-	
+
 	return cntr;
 }
 
@@ -166,8 +169,8 @@ char* str_replace(char* dest, const char* src, const char* s1, const char* s2) {
 		size_t it;
 		for (it = 0; *(s + it) == *(s1 + it) && *(s + it); it++) { }
 		if (l1 - it) *d++ = *s;
-		else { 
-			memcpy(d, s2, l2); 
+		else {
+			memcpy(d, s2, l2);
 			d += l2; s += l1-1;
 		}
 	} while (*s++);
@@ -196,7 +199,7 @@ char* str_find_chr(char* src, char c) {
 	while (*src)
 		if (*++src == c)
 			return src;
-	
+
 	return NULL;
 }
 
@@ -206,42 +209,42 @@ ssize_t str_searcho(str_ostr_t src, ssize_t l, ssize_t r, char t) {
 		if (*(src+m) == t) return m;
 		if (*(src+m) > t) return str_searcho(src, l, m - 1, t);
 		else return str_searcho(src, m + 1, r, t);
-	} 
+	}
 	return -1;
 }
 
 size_t str_find_first(const char* src, const char* search) {
-	for (size_t i = 0; *(src + i); i++)	
-		if (str_search(search, *(src + i)) != -1) 
-			return i; 
+	for (size_t i = 0; *(src + i); i++)
+		if (str_search(search, *(src + i)) != -1)
+			return i;
 
-	return NULL;
+	return 0;
 }
 
 size_t str_find_firstn(const char* src, const char* search) {
-	for (size_t i = 0; *(src + i); i++)	
+	for (size_t i = 0; *(src + i); i++)
 		if (!str_search(search, *(src + i)))
-			return i; 
+			return i;
 
-	return NULL;
+	return 0;
 }
 
 size_t str_find_last(const char* src, const char* search) {
 	size_t i = strlen(src);
-	for (; i; i--) 
+	for (; i; i--)
 		if (str_search(search, *(src + i)))
-			return i; 
-	
-	return NULL;
+			return i;
+
+	return 0;
 }
 
 size_t str_find_lastn(const char* src, const char* search) {
-	size_t i = strlen(src); 
-	for (; i; i--) 
+	size_t i = strlen(src);
+	for (; i; i--)
 		if (!str_search(search, *(src + i)))
-			return i; 
-	
-	return NULL;
+			return i;
+
+	return 0;
 }
 
 char* str_toupper(char* buf) {
@@ -271,18 +274,18 @@ char* str_swap_case(char* buf) {
 }
 
 char* str_dircpy(char* dest, const char* src, ssize_t n, int step) {
-	ssize_t len = strlen(src), 
+	ssize_t len = strlen(src),
 		    astep = (step > 0)? step : step * -1;
 
-	char *sptr = (step > 0)? src : src + len - 1, 
-		 *dptr = dest;
-	
+	const char* sptr = (step > 0)? src : src + len - 1;
+	char* dptr = dest;
+
 	while (len > 0 && n--) {
 		*dptr++ = *sptr;
 		sptr += step; len -= astep;
-	} 
-	
-	*dptr = NULL;
+	}
+
+	*dptr = 0;
 	return dest;
 }
 
@@ -292,13 +295,13 @@ char* str_concat(size_t anct, char* dest, ...) {
 	size_t end = 0, len;
 
 	while (anct--) {
-		char* carg = va_arg(args, const char*);
+		const char* carg = va_arg(args, const char*);
 		len = strlen(carg);
 		memcpy(dest + end, carg, len);
 		end += len;
 	}
 
-	*(dest + end) = NULL;
+	*(dest + end) = 0;
 	va_end(args);
 	return dest;
 }
@@ -312,7 +315,7 @@ char* str_mul(char* dest, const char* src, size_t rhs) {
 		d += slen;
 	}
 
-	*d = NULL;
+	*d = 0;
 	return dest;
 }
 
@@ -329,7 +332,7 @@ char* str_lpad(char* dest, const char* src, size_t width, char pad_chr) {
 	ssize_t s = strlen(src);
 	if ((ssize_t)width - s <= 0)
 		return memcpy(dest, src, s+1);
-	
+
 	memset(dest, pad_chr, width);
 	memcpy(dest + (width - s), src, s+1);
 	return dest;
@@ -342,7 +345,7 @@ char* str_rpad(char* dest, const char* src, size_t width, char pad_chr) {
 
 	memcpy(dest, src, s+1);
 	memset(dest + s, pad_chr, (width - s));
-	*(dest + width) = NULL;
+	*(dest + width) = 0;
 
 	return dest;
 }
@@ -351,10 +354,10 @@ char* str_cpad(char* dest, const char* src, size_t width, char pad_chr) {
 	ssize_t s = strlen(src), l;
 	if ((l = (ssize_t)width - s) <= 0)
 		return memcpy(dest, src, s + 1);
-	
+
 	memset(dest, pad_chr, width);
 	memcpy(dest + (l>>1), src, s);
-	*(dest + width) = NULL;
+	*(dest + width) = 0;
 
 	return dest;
 }
@@ -362,9 +365,9 @@ char* str_cpad(char* dest, const char* src, size_t width, char pad_chr) {
 char* str_tab_to_space(char* dest, const char* src, int w) {
 	char* d = dest;
 	do {
-		if (*src == '\t') { 
-			memset(d, ' ', w); 
-			d += w; 
+		if (*src == '\t') {
+			memset(d, ' ', w);
+			d += w;
 		} else *d++ = *src;
 	} while (*src++);
 
@@ -374,14 +377,14 @@ char* str_tab_to_space(char* dest, const char* src, int w) {
 char* str_space_to_tab(char* dest, const char* src, int c) {
 	char* d = dest;
 	size_t off = 0;
-	
+
 	do {
 		int i;
 		for (i = 0; *src == ' ' && i < c; i++, src++) { }
 		if (i - c) {
 			memcpy(d + off, src-i, i+1);
 			off += i+1;
-		} 
+		}
 		else *(d + off++) = '\t', src--;
 	} while (*src++);
 
@@ -416,7 +419,7 @@ char* str_cexescape(char* dest, int c) {
 }
 
 char* str_escape(char* dest, const char* src) {
-	char* d = dest, k = 0;
+	char k = 0;
 	do {
 		str_cexescape(dest + k, *src);
 		const char* de = dest + k;
@@ -431,32 +434,32 @@ str_stble_t* str_splitn(const char* src, char delimiter, size_t max, str_stble_t
 	size_t srlen = strlen(src)+1;
 	out->refbuf = malloc(srlen);
 	memcpy(out->refbuf, src, srlen);
-	
+
 	char *k, **it;
 	for (k = out->refbuf, out->n = 0; k; out->n++)
 		k = str_find_chr(k, delimiter);
-	
+
 	if (max && out->n > max)
 		out->n = max;
 
 	out->tble = it = malloc(sizeof(char*) * out->n);
-	if (!it) 
+	if (!it)
 		return NULL;
 
 	int i;
 	for (i = 0, k = out->refbuf; i < out->n; i++) {
 		*it++ = k;
 		k = str_find_chr(k, delimiter);
-		
+
 		if (out->n - i - 1)
-			*k++ = NULL;
+			*k++ = 0;
 	}
 
 	return out;
 }
 
 void str_free_split(str_stble_t* sres) {
-	if (!sres) 
+	if (!sres)
 		return;
 	if (sres->tble)
 		free(sres->tble);
@@ -473,7 +476,7 @@ char* str_join(char* dest, char delimiter, const str_stble_t* in) {
 
 		if (in->n - i - 1)
 			*d++ = delimiter;
-	} *d = NULL;
+	} *d = 0;
 
 	return dest;
 }
@@ -481,7 +484,7 @@ char* str_join(char* dest, char delimiter, const str_stble_t* in) {
 char* str_fmt_time(time_t t, char* dest, size_t destlen, const char* fmt) {
 	/* idea for static time buf stolen from: https://github.com/happyfish100/libfastcommon */
 	static char sbuf[64];
-	
+
 	if (dest) {
 		dest = sbuf;
 		destlen = sizeof(sbuf);
@@ -489,13 +492,13 @@ char* str_fmt_time(time_t t, char* dest, size_t destlen, const char* fmt) {
 
 	struct tm* tinf = localtime(&t);
 	strftime(dest, destlen, fmt, tinf);
-	
+
 	return dest;
 }
 
 char* str_time_DDMMYYYY(time_t t, char* dest, size_t destlen) {
 	struct tm* tinf = localtime(&t);
-	snprintf(dest, destlen, "%02d%02d%04d", 
+	snprintf(dest, destlen, "%02d%02d%04d",
 		tinf->tm_mday, tinf->tm_mon + 1, tinf->tm_year + 1900);
 
 	return dest;

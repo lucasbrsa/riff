@@ -9,17 +9,17 @@
 
 #define __STR(x) #x
 
-#define __SI64_MAXS ( 10 * sizeof(signed __int64) * CHAR_BIT/33   +3)
+#define __SI64_MAXS (10*sizeof(int64_t)*CHAR_BIT/33+3)
 
-#define __UI64_MAXS ( 10 * sizeof(unsigned __int64) * CHAR_BIT/33 +2)
+#define __UI64_MAXS (10*sizeof(uint64_t)*CHAR_BIT/33+2)
 
-#define __PTR_MAXS sizeof(__STR( SIZE_MAX )) + 1
+#define __PTR_MAXS (sizeof(__STR(SIZE_MAX))+1)
 
-/* type conversion: signed __int64 to string */
-char* str_sits(signed __int64 s, char buf[__SI64_MAXS]);
+/* type conversion: signed int64_t to string */
+char* str_sits(int64_t s, char buf[__SI64_MAXS]);
 
-/* type conversion: unsigned __int64 to string */
-char* str_uits(unsigned __int64 u, char buf[__UI64_MAXS]);
+/* type conversion: unsigned int64_t to string */
+char* str_uits(uint64_t u, char buf[__UI64_MAXS]);
 
 /* strip trailing whitespace, returns point to the first non-whitespace char */
 char* str_rstrip(char* buf);
@@ -52,7 +52,7 @@ char* str_filter(char* dest, const char* src, _Bool(func)(char));
 
 /* stores information about previous calls to str_find_substr */
 typedef struct {
-	char* tsrc;
+	const char* tsrc; // <== be careful
 	size_t begoff;
 } str_tok_t;
 
@@ -184,32 +184,32 @@ size_t str_len_excluding(const char* src, const char* exclusions);
 ///char* str_abstorel_path(char* dest, const char* rel, const char* path);
 
 /* behaves like str_lpad, but padding with zero chars */
-INLINE char* str_zfill(char* dest, const char* src, size_t width) 
+INLINE char* str_zfill(char* dest, const char* src, size_t width)
 	{ return str_lpad(dest, src, width, '0'); }
 
 /* reverse a string */
-INLINE char* str_reverse(char* dest, const char* src) 
+INLINE char* str_reverse(char* dest, const char* src)
 	{ return str_dircpy(dest, src, -1, -1); }
 
 /* replace all new lines with spaces */
-INLINE char* str_newline_to_space(char* dest, const char* src) 
-	{ return str_replace(dest, src, '\n', ' '); }
+INLINE char* str_newline_to_space(char* dest, const char* src)
+	{ return str_replace(dest, src, "\n", " "); }
 
 /* remove all instances of a substr */
-INLINE char* str_remove(char* dest, const char* src, const char* sub) 
+INLINE char* str_remove(char* dest, const char* src, const char* sub)
 	{ return str_replace(dest, src, sub, ""); }
 
 /* directional copy in place, like strcpy */
-INLINE char* str_dir_cpy(char* dest, const char* src, int step) 
-	{ return str_dir_ncpy(dest, src, -1, step); }
+INLINE char* str_dirncpy(char* dest, const char* src, int step)
+	{ return str_dircpy(dest, src, -1, step); }
 
 /* break a delimited string into token, opposite of str_join, will allocate memory, will modify src */
-INLINE str_stble_t* str_split(const char* src, char delimiter, str_stble_t* out) 
-	{ return str_splitn(src, delimiter, NULL, out); }
+INLINE str_stble_t* str_split(const char* src, char delimiter, str_stble_t* out)
+	{ return str_splitn(src, delimiter, 0, out); }
 
 /* format time using internal static time buffer */
 INLINE char* str_sfmt_time(time_t t, const char* fmt)
-	{ return str_fmt_time(t, NULL, NULL, fmt); }
+	{ return str_fmt_time(t, NULL, 0, fmt); }
 
 
 #define STR_ISARABIC(c)		((c) >= '0' && (c) <= '9')
