@@ -46,9 +46,18 @@ hashmap_t* hashmap_create(size_t size) {
 }
 
 void hashmap_free(hashmap_t* map) {
+	
 	for (int i = 0; i < map->size; i++)
-		free((void*)&map->buckets[i]);
-
+	{
+		hashmap_bucket_t* b = map->buckets[i];
+		while (b->next != NULL) {
+			hashmap_bucket_t* t = b;
+			b = t->next;
+			free(b);
+		}
+		//free((void*)&map->buckets[i]);
+	}
+	
 	free(map);
 }
 
@@ -77,24 +86,7 @@ int power(int base, int exponent) {
 
 _Bool insert(hashmap_bucket_t* head, char* key, void* value) {
 
-#if 0
-
-	if (head->next != NULL)
-	{
-		hashmap_bucket_t* hb = malloc(sizeof(hashmap_bucket_t));
-
-		hb->next = head->next;
-		hb->key = key;
-		hb->value = value;
-		head->next = hb;
-
-	} else {
-		head->key = key;
-		head->value = value;
-		head->next = malloc(sizeof(hashmap_bucket_t));
-	}
-
-#endif
+	if (!head || !key || !value) { return 0; }
 
 	if (head->next != NULL)
 	{
@@ -102,7 +94,7 @@ _Bool insert(hashmap_bucket_t* head, char* key, void* value) {
 		hashmap_bucket_t* current = head;
 
 		do {
-			if (current->key == key) {
+			if (!strcmp(current->key, key)) {
 				current->value = value;
 				goto ret;
 			}
@@ -133,17 +125,20 @@ void* search(hashmap_t* map, char* key) {
 	/* calculate which bucket is of interest */
 	hashmap_bucket_t* current = &(map->buckets[get_index(get_hashcode(key), map->size)]);
 
+	if (!map || !key) { return 0; }
+
 	/* step through, checking if the key matches and return if it does */
 	do {
-		if (current->key == key)
+		if (!strcmp(current->key, key))
 			return current->value;
 		current = current->next;
 	} while (current->next != NULL);
 
-	return NULL;
+	return 0;
 }
 
 void* hashmap_resize(hashmap_t* map, size_t new_size)
 {
+	/* yeah the boys */
 	return realloc(map, sizeof(map) * new_size);
 }
