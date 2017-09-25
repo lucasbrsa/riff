@@ -24,18 +24,17 @@ _Bool vector_realloc(vector_t* v, size_t len) {
 }
 
 void vector_call_deletere(vector_t* v, size_t e) {
-	(*v->deleter)(v->data + (e * v->blksz));
+	(*v->deleter)(*(void**)(v->data + (e * v->blksz)));
 }
 
 void vector_call_deletera(vector_t* v) {
-	size_t l = 0;
-	while (l < v->size)
-		(*v->deleter)(v->data + (l * v->blksz));
+	for (void* b = vector_front(v); b != vector_back(v); b = vector_next(v, b))
+		(*v->deleter)(*(void**)b);
 }
 
 void vector_call_deleteri(vector_t* v, size_t l, size_t r) {
-	for (size_t o = l; o < r; o++)
-		(*v->deleter)(v->data + (o * v->blksz));
+	for (void* b = vector_at(v, l); b != vector_at(v, r); b = vector_next(v, b))
+		(*v->deleter)(*(void**)b);
 }
 
 _Bool vector_reserve(vector_t* v, size_t len) {

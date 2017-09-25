@@ -17,7 +17,7 @@
 #define VECTOR_GROWTH(n) (2*(n))
 
 /* a function call when members of a vector are heap allocated */
-typedef void(*vector_del_f)(void* ptr);
+typedef void(vector_del_f)(void* ptr);
 
 /* the vector */
 typedef struct {
@@ -86,7 +86,7 @@ signed int vector_eq(vector_t* v1, vector_t* v2);
 /* iterators, done via pointer comparison */
 
 /* get the first element in the vector */
-#define vector_first(v) \
+#define vector_front(v) \
 	((void*)(v)->data)
 
 /* get the next element given an iterator */

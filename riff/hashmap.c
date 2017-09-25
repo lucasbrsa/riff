@@ -46,10 +46,10 @@ hashmap_t* hashmap_create(size_t size) {
 }
 
 void hashmap_free(hashmap_t* map) {
-	
+
 	for (int i = 0; i < map->size; i++)
 	{
-		hashmap_bucket_t* b = map->buckets[i];
+		hashmap_bucket_t* b = &map->buckets[i];
 		while (b->next != NULL) {
 			hashmap_bucket_t* t = b;
 			b = t->next;
@@ -57,7 +57,7 @@ void hashmap_free(hashmap_t* map) {
 		}
 		//free((void*)&map->buckets[i]);
 	}
-	
+
 	free(map);
 }
 

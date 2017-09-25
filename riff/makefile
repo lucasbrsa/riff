@@ -1,4 +1,4 @@
-.PHONY: clean run
+.PHONY: clean run debug force
 
 # compiler and dirs
 CC=clang
@@ -13,7 +13,7 @@ OBJ := $(addprefix $(ODIR)/,$(notdir $(SRC:.c=.o)))
 
 # flags
 LFLAGS=-lm
-CFLAGS=-std=c99 -Wall -I$(IDIR)
+CFLAGS=-std=c99 -g -Wall -I$(IDIR)
 
 # compile
 $(ODIR)/%.o: $(SDIR)/%.c
@@ -31,6 +31,8 @@ run: $(BPROC)
 # run with debugger
 debug: $(BPROC)
 	lldb $(BPROC)
+
+force: clean run
 
 # get rid of all the garbage
 clean:
