@@ -1,6 +1,8 @@
 #ifndef _HASHMAP_H
 #define _HASHMAP_H
 
+#include "generic.h"
+
 #include <string.h>
 
 /* hashmap bucket linked-list type */
@@ -24,7 +26,7 @@ hashmap_t* hashmap_create(size_t size);
 void hashmap_free(hashmap_t* map);
 
 /* insert data into the hashmap with a hashable key */
-_Bool hashmap_set(hashmap_t* map, char* key, void* data);
+bool hashmap_set(hashmap_t* map, char* key, void* data);
 
 /* retrieve data from the hashmap given a look-up key */
 void* hashmap_get(hashmap_t* map, char* key);

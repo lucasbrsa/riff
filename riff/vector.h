@@ -36,22 +36,22 @@ vector_t* vector_copy(const vector_t* v);
 void vector_free(vector_t* v);
 
 /* realloc the vector */
-_Bool vector_realloc(vector_t* v, size_t len);
+bool vector_realloc(vector_t* v, size_t len);
 
 /* reserve extra space for the vector */
-_Bool vector_reserve(vector_t* v, size_t len);
+bool vector_reserve(vector_t* v, size_t len);
 
 /* append multiple elements to the end of the vector */
-_Bool vector_append(vector_t* v, const void* vals, size_t val_count);
+bool vector_append(vector_t* v, const void* vals, size_t val_count);
 
 /* delete all elements of the vector */
 void vector_clear(vector_t* v);
 
 /* insert element into the vector */
-_Bool vector_insert(vector_t* v, size_t index, void* val);
+bool vector_insert(vector_t* v, size_t index, void* val);
 
 /* remove element from the vector */
-_Bool vector_remove(vector_t* v, size_t index);
+bool vector_remove(vector_t* v, size_t index);
 
 /* change the value stored at index */
 void* vector_set(vector_t* v, size_t index, void* val);
@@ -81,7 +81,7 @@ signed int vector_eq(vector_t* v1, vector_t* v2);
 
 /* remove element from the end of the vector */
 #define vector_push_back(v, e) \
-	(_Bool)(vector_append((v), (e), 1))
+	(bool)(vector_append((v), (e), 1))
 
 /* iterators, done via pointer comparison */
 

@@ -2,6 +2,7 @@
 #define _LOG_H
 
 #include "vector.h"
+#include "generic.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -22,7 +23,7 @@ typedef struct {
 
 	union {
 		char* pool_ptr;
-		const log_fmt_mod_fun fun;
+		log_fmt_mod_fun fun;
 	};
 } log_fmt_pair_t;
 
@@ -52,6 +53,8 @@ typedef struct {
 
 log_fmt_t* log_compile_pattern(const char* fmt);
 void log_free_pattern(log_fmt_t* f);
+
+void log_test(log_fmt_t* f, log_msg_t* m);
 
 //log_logger_t* log_logger(const char* name, FILE* out, ...); // fill in this shit later
 
@@ -84,7 +87,7 @@ error_if
 crit_if
 */
 
-_Bool log_canlog(log_logger_t* l);
+bool log_canlog(log_logger_t* l);
 
 void log_set_level(log_logger_t* l, log_priority_t nv);
 log_priority_t log_get_level(log_logger_t* l);

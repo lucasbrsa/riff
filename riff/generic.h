@@ -1,6 +1,7 @@
 #ifndef _GENERIC_H
 #define _GENERIC_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 

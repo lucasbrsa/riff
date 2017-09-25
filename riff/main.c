@@ -1,24 +1,13 @@
-//	NEED TO FIX THE VECTOR DELETION!!!!
+#include <stdio.h>
 
-#include <malloc.h>
-
-// #include "log.h"
-#include "vector.h"
+#include "log.h"
 
 int main(int argc, char ** argv) {
-	vector_t* my_vec = vector_init(128, sizeof(int*), &free);
+	log_msg_t m;
+	m.in = "example";
 
-	int* a = malloc(sizeof(int)); *a = 4;
-	int* b = malloc(sizeof(int)); *b = 7;
-
-	printf("*i = %i; i = %p; &i = %p\n", *a, a, &a);
-	printf("*i = %i; i = %p; &i = %p\n", *b, b, &b);
-
-	vector_push_back(my_vec, &a);
-	vector_push_back(my_vec, &b);
-
-	vector_free(my_vec);
-
-	// log_fmt_t* f = log_compile_pattern("here is a very simple %m pattern...");
-	// log_free_pattern(f);
+	log_fmt_t* f = log_compile_pattern("%m here is a very simple %m pattern...%m");
+	log_test(f, &m);
+	puts(m.out);
+	log_free_pattern(f);
 }

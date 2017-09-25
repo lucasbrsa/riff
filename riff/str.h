@@ -48,7 +48,7 @@ char* str_trans(str_ttble_t* t, char* buf);
 void str_free_ttble(str_ttble_t* t);
 
 /* filter chars out based on a function pointer */
-char* str_filter(char* dest, const char* src, _Bool(func)(char));
+char* str_filter(char* dest, const char* src, bool(func)(char));
 
 /* stores information about previous calls to str_find_substr */
 typedef struct {

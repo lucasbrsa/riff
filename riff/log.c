@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <malloc.h>
+#include <assert.h>
 
 #include "hashmap.h"
 #include "log.h"
@@ -22,16 +23,18 @@ log_fmt_t* log_compile_pattern(const char* fmt) {
 	f->pool = str_dup(fmt);
 	f->stack = vector_init(8, sizeof(log_fmt_pair_t*), free);
 
-	char *left_ptr, *itr;
-	for (itr = left_ptr = f->pool; *itr; itr++) {
+	char *left_ptr = NULL, *itr;
+	for (itr = f->pool; *itr; itr++) {
 		if (*itr == '%' || !*(itr + 1)) {
 			if (left_ptr) {
 				/* push a string to the stack */
 				log_fmt_pair_t* p = malloc(sizeof(log_fmt_pair_t));
 				p->type = LOG_FMT_STRR;
+
 				p->pool_ptr = left_ptr;
+
 				left_ptr = NULL; *itr = 0;
-				vector_push_back(f->stack, p);
+				vector_push_back(f->stack, &p);
 			}
 
 			if (*++itr) {
@@ -42,8 +45,8 @@ log_fmt_t* log_compile_pattern(const char* fmt) {
 				assert(STR_ISLOWER(*itr)); // < ---
 				assert(lut[*itr - 'a'] != 0); // < ---
 
-				// p->fun = &lut[*itr - 'a']; // <-- DEAL WITH THIS SHIT LATER...
-				vector_push_back(f->stack, p);
+				p->fun = lut[*itr - 'a']; // <-- DEAL WITH THIS SHIT LATER...
+				vector_push_back(f->stack, &p);
 			} else
 				break;
 		} else {
@@ -62,3 +65,25 @@ void log_free_pattern(log_fmt_t* f) {
 		free(f);
 	}
 }
+
+void log_test(log_fmt_t* f, log_msg_t* m) {
+	char* beg = m->out = malloc(128);
+	for (void* it = vector_front(f->stack); it != vector_back(f->stack); it = vector_next(f->stack, it)) {
+		log_fmt_pair_t tmp = **(log_fmt_pair_t**)(it);
+
+		assert(tmp.type == LOG_FMT_STRR || tmp.type == LOG_FMT_CBAK);
+
+		if (tmp.type == LOG_FMT_CBAK)
+			tmp.fun(m);
+
+		if (tmp.type == LOG_FMT_STRR) {
+			const char* i = tmp.pool_ptr;
+			do {
+				*m->out++ = *i;
+			} while (*++i);
+		}
+	}
+
+	m->out = beg;
+}
+

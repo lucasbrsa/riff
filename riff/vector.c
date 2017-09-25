@@ -11,7 +11,7 @@ void vector_call_deletera(vector_t* v);
 void vector_call_deletere(vector_t* v, size_t e);
 void vector_call_deleteri(vector_t* v, size_t l, size_t r);
 
-_Bool vector_realloc(vector_t* v, size_t len) {
+bool vector_realloc(vector_t* v, size_t len) {
 	char* r = realloc(v->data, len * v->blksz);
 
 	if (!r)
@@ -37,7 +37,7 @@ void vector_call_deleteri(vector_t* v, size_t l, size_t r) {
 		(*v->deleter)(*(void**)b);
 }
 
-_Bool vector_reserve(vector_t* v, size_t len) {
+bool vector_reserve(vector_t* v, size_t len) {
 	if (len < v->capacity)
 		return 0;
 
@@ -83,7 +83,7 @@ void vector_free(vector_t* v) {
 	free(v);
 }
 
-_Bool vector_insert(vector_t* v, size_t index, void* val) {
+bool vector_insert(vector_t* v, size_t index, void* val) {
 	if (v->size+1 > v->capacity)
 		if (!vector_realloc(v, VECTOR_GROWTH(v->capacity)))
 			return 0;
@@ -99,7 +99,7 @@ _Bool vector_insert(vector_t* v, size_t index, void* val) {
 	return 1;
 }
 
-_Bool vector_remove(vector_t* v, size_t index) {
+bool vector_remove(vector_t* v, size_t index) {
 	if (v->deleter)
 		vector_call_deletere(v, index);
 
@@ -112,7 +112,7 @@ _Bool vector_remove(vector_t* v, size_t index) {
 	return 1;
 }
 
-_Bool vector_append(vector_t* v, const void* vals, size_t val_count) {
+bool vector_append(vector_t* v, const void* vals, size_t val_count) {
 	size_t new_count = v->size + val_count;
 
 	if (v->capacity < new_count) {

@@ -119,7 +119,7 @@ void str_free_ttble(str_ttble_t* t) {
 	free(t);
 }
 
-char* str_filter(char* dest, const char* src, _Bool(func)(char)) {
+char* str_filter(char* dest, const char* src, bool(func)(char)) {
 	for (const char* c = src; *c; c++)
 		if ((*func)(*c))
 			*dest++ = *c;

@@ -12,7 +12,7 @@ unsigned int get_index(unsigned hashcode, size_t s);
 int power(int base, int exponent);
 
 /* insert data into the hashmap */
-_Bool insert(hashmap_bucket_t* list, char* key, void* value);
+bool insert(hashmap_bucket_t* list, char* key, void* value);
 
 /* search for a key-value pair in the hashmap */
 void* search(hashmap_t* map, char* key);
@@ -61,7 +61,7 @@ void hashmap_free(hashmap_t* map) {
 	free(map);
 }
 
-_Bool hashmap_set(hashmap_t* map, char* key, void* value) {
+bool hashmap_set(hashmap_t* map, char* key, void* value) {
 	/* calculate the bucket we'll be inserting into */
 	hashmap_bucket_t* hb = &map->buckets[get_index(get_hashcode(key), map->size)];
 
@@ -84,7 +84,7 @@ int power(int base, int exponent) {
 	return result;
 }
 
-_Bool insert(hashmap_bucket_t* head, char* key, void* value) {
+bool insert(hashmap_bucket_t* head, char* key, void* value) {
 
 	if (!head || !key || !value) { return 0; }
 
