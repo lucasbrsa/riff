@@ -6,69 +6,138 @@
 #include "log.h"
 #include "str.h"
 
-/* implementations of format specifiers */
+/* globals */
+static log_fmt_t* global_fmt = NULL;
+
+/* implementations of format specifiers:
+ *
+ * %d default format
+ * %f file the log was generated in
+ * %F function the log was generated in
+ * %i the message number (id)
+ * %l line the log was generated on
+ * %m the log message
+ * %n the logger name
+ * %p log priority
+ * %P short log priority
+ * %t full formatted date time
+ * %% percent sign
+*/
+
+void __d(log_msg_t* msg) {
+	static log_fmt_t* f = NULL;
+
+	if (!f)
+		f = log_compile_pattern("[%n] %m");
+
+	log_format(f, msg);
+}
+
+void __f(log_msg_t* msg) {
+	msg->formatted += str_cpy(msg->formatted, msg->file);
+}
+
+void __F(log_msg_t* msg) {
+	msg->formatted += str_cpy(msg->formatted, msg->func);
+}
+
+void __i(log_msg_t* msg) {
+	static char lbuf[__UI64_MAXS];
+	char* spos = str_uits(msg->id, lbuf);
+	msg->formatted += str_cpy(msg->formatted, spos);
+}
+
+void __l(log_msg_t* msg) {
+	static char lbuf[__UI64_MAXS];
+	char* spos = str_uits(msg->line, lbuf);
+	msg->formatted += str_cpy(msg->formatted, spos);
+}
 
 void __m(log_msg_t* msg) {
-	msg->out += str_cpy(msg->out, msg->in);
+	msg->formatted += str_cpy(msg->formatted, msg->message);
+}
+
+void __n(log_msg_t* msg) {
+	msg->formatted += str_cpy(msg->formatted, msg->lname);
+}
+
+void __p(log_msg_t* msg) {
+	static char* lut[] = {
+		"trace",
+		"debug",
+		"info",
+		"warn",
+		"error",
+		"crit"
+	};
+
+	assert(msg->priority >= 0 && msg->priority < (sizeof(lut) / sizeof(char*)));
+	msg->formatted += str_cpy(msg->formatted, lut[msg->priority]);
+}
+
+void __s(log_msg_t* msg) {
+	static const char* lut = "LDIWEC";
+
+	assert(msg->priority >= 0 && msg->priority < sizeof("LDIWEC"));
+	*msg->formatted++ = *(lut + msg->priority);
 }
 
 void __t(log_msg_t* msg) {
-	/* use static time buffers */
 	static char stbuf[26];
 
+	/* replace with global time format */
 	strftime(stbuf, 26, "%Y-%m-%d %H:%M:%S", msg->tinfo);
-	msg->out += str_cpy(msg->out, stbuf);
+	msg->formatted += str_cpy(msg->formatted, stbuf);
 }
 
 void __percent (log_msg_t* msg) {
-	*msg->out++ = '%';
+	*msg->formatted++ = '%';
 }
 
-static log_fmt_mod_fun flut[26 * 2 + 1] = {
-	/* uppercase */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+log_fmt_t* log_compile_pattern(const char* fmt) {
 
-	/* lowercase */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, __m,
-	0, 0, 0, 0, 0, 0, __t, 0, 0, 0, 0, 0, 0,
+	static log_fmod_f flut[26 * 2 + 1] = {
+		/* uppercase */
+		0, 0, 0, 0, 0, __F, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
-	/* %% */
-	__percent
-};
+		/* lowercase */
+		0, 0, 0, __d, 0, __f, 0, 0, __i, 0, 0, __l, __m,
+		__n, 0, __p, 0, 0, __s, __t, 0, 0, 0, 0, 0, 0,
 
-log_fmt_t log_compile_pattern(const char* fmt) {
-	log_fmt_t f;
-	f.pool = str_dup(fmt);
-	f.stack = vector_init(8, sizeof(log_fmt_pair_t*), free);
+		/* %% */
+		__percent
+	};
+
+	log_fmt_t* f = malloc(sizeof(log_fmt_t));
+	f->stack = vector_init(8, sizeof(log_fpair_t*), free);
+	f->pool = str_dup(fmt);
 
 	char *left_ptr = NULL, *itr;
-	for (itr = f.pool; *itr; itr++) {
+	for (itr = f->pool; *itr; itr++) {
 		if (*itr == '%' || !*(itr + 1)) {
 
-			/* push a string to the stack */
 			if (left_ptr) {
-				log_fmt_pair_t* p = malloc(sizeof(log_fmt_pair_t));
+				log_fpair_t* p = malloc(sizeof(log_fpair_t));
 				p->type = LOG_FMT_STRR; p->pool_ptr = left_ptr;
 
-				vector_push_back(f.stack, &p);
+				vector_push_back(f->stack, &p);
 				left_ptr = NULL; *itr = 0;
 			}
 
-			/* push a callback to the stack */
 			if (*++itr) {
 				if (!STR_ISLATIN(*itr) && *itr != '%')
 					continue;
 
 				char index = (STR_ISUPPER(*itr))?*itr-'A':(STR_ISLOWER(*itr))?*itr-'a'+26:26*2;
 
-				if (!flut[index])
+				if (!flut[(unsigned)index])
 					continue;
 
-				log_fmt_pair_t* p = malloc(sizeof(log_fmt_pair_t));
-				p->type = LOG_FMT_CBAK; p->fun = flut[index];
+				log_fpair_t* p = malloc(sizeof(log_fpair_t));
+				p->type = LOG_FMT_CBAK; p->fun = flut[(unsigned)index];
 
-				vector_push_back(f.stack, &p);
+				vector_push_back(f->stack, &p);
 			} else
 				break;
 		} else
@@ -79,28 +148,65 @@ log_fmt_t log_compile_pattern(const char* fmt) {
 	return f;
 }
 
-void log_free_pattern(log_fmt_t f) {
-	vector_free(f.stack);
-	free(f.pool);
+void log_free_pattern(log_fmt_t* f) {
+	if (f) {
+		vector_free(f->stack);
+		free(f->pool);
+		free(f);
+	}
+
+	f = NULL;
 }
 
-void log_test(log_fmt_t f, log_msg_t* m) {
-	char* beg = m->out = malloc(128);
-	for (void* it = vector_front(f.stack); it != vector_back(f.stack); it = vector_next(f.stack, it)) {
-		log_fmt_pair_t tmp = **(log_fmt_pair_t**)(it);
+void log_format(log_fmt_t* f, log_msg_t* m) {
+	char* beg = m->formatted = malloc(128);
+	for (void* it = vector_front(f->stack); it != vector_back(f->stack); it = vector_next(f->stack, it)) {
+		log_fpair_t tmp = **(log_fpair_t**)(it);
 
 		assert(tmp.type == LOG_FMT_STRR || tmp.type == LOG_FMT_CBAK);
 
 		if (tmp.type == LOG_FMT_CBAK)
 			tmp.fun(m);
 
-		if (tmp.type == LOG_FMT_STRR) {
-			const char* i = tmp.pool_ptr;
-			do {
-				*m->out++ = *i;
-			} while (*++i);
-		}
+		if (tmp.type == LOG_FMT_STRR)
+			m->formatted += str_cpy(m->formatted, tmp.pool_ptr);
 	}
 
-	m->out = beg;
+	m->formatted = beg;
+}
+
+void log_set_pattern(const char* p) {
+	global_fmt = log_compile_pattern(p);
+}
+
+log_fmt_t* log_get_pattern(void) {
+	if (!global_fmt)
+		global_fmt = log_compile_pattern("%d");
+
+	return global_fmt;
+}
+
+void __handle_rule_null(log_msg_t* msg, void* impl) {
+	struct __rule_null i = *(struct __rule_null*)impl;
+	return;
+}
+
+void __handle_rule_stdout(log_msg_t* msg, void* impl) {
+	struct __rule_stdout i = *(struct __rule_stdout*)impl;
+	fputs(msg->formatted, stdout);
+}
+
+void __handle_rule_stderr(log_msg_t* msg, void* impl) {
+	struct __rule_stderr i = *(struct __rule_stderr*)impl;
+	fputs(msg->formatted, stderr);
+}
+
+void __handle_rule_basic(log_msg_t* msg, void* impl) {
+	struct __rule_basic i = *(struct __rule_basic*)impl;
+	fputs(msg->formatted, i.target);
+}
+
+void __handle_rule_capped(log_msg_t* msg, void* impl) {
+	struct __rule_capped i = *(struct __rule_capped*)impl;
+	assert(false);
 }
