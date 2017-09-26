@@ -273,6 +273,14 @@ char* str_swap_case(char* buf) {
 	return buf;
 }
 
+size_t str_cpy(char* dest, const char* src) {
+	const char* s = src;
+	do {
+		*dest++ = *s;
+	} while (*++s);
+	return (size_t)(s - src);
+}
+
 char* str_dircpy(char* dest, const char* src, ssize_t n, int step) {
 	ssize_t len = strlen(src),
 		    astep = (step > 0)? step : step * -1;

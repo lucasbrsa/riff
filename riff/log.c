@@ -6,69 +6,87 @@
 #include "log.h"
 #include "str.h"
 
-void log_itrprt_m(log_msg_t* msg) {
-	const char* i = msg->in;
-	do {
-		*msg->out++ = *i;
-	} while (*++i);
+/* implementations of format specifiers */
+
+void __m(log_msg_t* msg) {
+	msg->out += str_cpy(msg->out, msg->in);
 }
 
-log_fmt_t* log_compile_pattern(const char* fmt) {
-	const log_fmt_mod_fun lut[26] = {
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, log_itrprt_m,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	};
+void __t(log_msg_t* msg) {
+	/* use static time buffers */
+	static char stbuf[26];
 
-	log_fmt_t* f = malloc(sizeof(log_fmt_t));
-	f->pool = str_dup(fmt);
-	f->stack = vector_init(8, sizeof(log_fmt_pair_t*), free);
+	strftime(stbuf, 26, "%Y-%m-%d %H:%M:%S", msg->tinfo);
+	msg->out += str_cpy(msg->out, stbuf);
+}
+
+void __percent (log_msg_t* msg) {
+	*msg->out++ = '%';
+}
+
+static log_fmt_mod_fun flut[26 * 2 + 1] = {
+	/* uppercase */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+	/* lowercase */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, __m,
+	0, 0, 0, 0, 0, 0, __t, 0, 0, 0, 0, 0, 0,
+
+	/* %% */
+	__percent
+};
+
+log_fmt_t log_compile_pattern(const char* fmt) {
+	log_fmt_t f;
+	f.pool = str_dup(fmt);
+	f.stack = vector_init(8, sizeof(log_fmt_pair_t*), free);
 
 	char *left_ptr = NULL, *itr;
-	for (itr = f->pool; *itr; itr++) {
+	for (itr = f.pool; *itr; itr++) {
 		if (*itr == '%' || !*(itr + 1)) {
+
+			/* push a string to the stack */
 			if (left_ptr) {
-				/* push a string to the stack */
 				log_fmt_pair_t* p = malloc(sizeof(log_fmt_pair_t));
-				p->type = LOG_FMT_STRR;
+				p->type = LOG_FMT_STRR; p->pool_ptr = left_ptr;
 
-				p->pool_ptr = left_ptr;
-
+				vector_push_back(f.stack, &p);
 				left_ptr = NULL; *itr = 0;
-				vector_push_back(f->stack, &p);
 			}
 
+			/* push a callback to the stack */
 			if (*++itr) {
-				/* push a callback to the stack */
+				if (!STR_ISLATIN(*itr) && *itr != '%')
+					continue;
+
+				char index = (STR_ISUPPER(*itr))?*itr-'A':(STR_ISLOWER(*itr))?*itr-'a'+26:26*2;
+
+				if (!flut[index])
+					continue;
+
 				log_fmt_pair_t* p = malloc(sizeof(log_fmt_pair_t));
-				p->type = LOG_FMT_CBAK;
+				p->type = LOG_FMT_CBAK; p->fun = flut[index];
 
-				assert(STR_ISLOWER(*itr)); // < ---
-				assert(lut[*itr - 'a'] != 0); // < ---
-
-				p->fun = lut[*itr - 'a']; // <-- DEAL WITH THIS SHIT LATER...
-				vector_push_back(f->stack, &p);
+				vector_push_back(f.stack, &p);
 			} else
 				break;
-		} else {
+		} else
 			if (!left_ptr)
 				left_ptr = itr;
-		}
 	}
 
 	return f;
 }
 
-void log_free_pattern(log_fmt_t* f) {
-	if (f) {
-		vector_free(f->stack);
-		free(f->pool);
-		free(f);
-	}
+void log_free_pattern(log_fmt_t f) {
+	vector_free(f.stack);
+	free(f.pool);
 }
 
-void log_test(log_fmt_t* f, log_msg_t* m) {
+void log_test(log_fmt_t f, log_msg_t* m) {
 	char* beg = m->out = malloc(128);
-	for (void* it = vector_front(f->stack); it != vector_back(f->stack); it = vector_next(f->stack, it)) {
+	for (void* it = vector_front(f.stack); it != vector_back(f.stack); it = vector_next(f.stack, it)) {
 		log_fmt_pair_t tmp = **(log_fmt_pair_t**)(it);
 
 		assert(tmp.type == LOG_FMT_STRR || tmp.type == LOG_FMT_CBAK);
@@ -86,4 +104,3 @@ void log_test(log_fmt_t* f, log_msg_t* m) {
 
 	m->out = beg;
 }
-

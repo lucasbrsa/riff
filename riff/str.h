@@ -101,6 +101,10 @@ char* str_tolower(char* buf);
 /* modify buf to flip the case of all latin characters */
 char* str_swap_case(char* buf);
 
+/* it is debated as to weather this should be included */
+/* regardless it is implemented */
+size_t str_cpy(char* dest, const char* src);
+
 /* directional copy in place, like strncpy */
 char* str_dircpy(char* dest, const char* src, ssize_t  n, int step);
 
@@ -220,8 +224,8 @@ INLINE char* str_sfmt_time(time_t t, const char* fmt)
 
 #define STR_ISSPACE(c)		((c) == ' ' || ((c) >= '\x09' && (c) <= '\xD'))
 
-#define STR_ISLATIN(c)		( STR_ISLOWER(c) || STR_ISUPPER(c))
+#define STR_ISLATIN(c)		(STR_ISLOWER(c) || STR_ISUPPER(c))
 
-#define STR_ISALPHANUM(c)	( STR_ISARABIC(c) || STR_ISLATIN(c))
+#define STR_ISALPHANUM(c)	(STR_ISARABIC(c) || STR_ISLATIN(c))
 
 #endif

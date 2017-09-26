@@ -6,11 +6,12 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 typedef struct {
 	char* out;
 	const char* in;
-	// ...
+	struct tm* tinfo;
 } log_msg_t;
 
 typedef void (*log_fmt_mod_fun)(log_msg_t* msg);
@@ -51,10 +52,10 @@ typedef struct {
 	int counter;
 } log_logger_t;
 
-log_fmt_t* log_compile_pattern(const char* fmt);
-void log_free_pattern(log_fmt_t* f);
+log_fmt_t log_compile_pattern(const char* fmt);
+void log_free_pattern(log_fmt_t f);
 
-void log_test(log_fmt_t* f, log_msg_t* m);
+void log_test(log_fmt_t f, log_msg_t* m);
 
 //log_logger_t* log_logger(const char* name, FILE* out, ...); // fill in this shit later
 
@@ -87,13 +88,13 @@ error_if
 crit_if
 */
 
-bool log_canlog(log_logger_t* l);
+// bool log_canlog(log_logger_t* l);
 
-void log_set_level(log_logger_t* l, log_priority_t nv);
-log_priority_t log_get_level(log_logger_t* l);
+// void log_set_level(log_logger_t* l, log_priority_t nv);
+// log_priority_t log_get_level(log_logger_t* l);
 
-log_fmt_t* log_get_fmt(log_logger_t* l);
-void log_set_fmt(log_logger_t* l, log_fmt_t* f);
+// log_fmt_t log_get_fmt(log_logger_t* l);
+// void log_set_fmt(log_logger_t* l, log_fmt_t f);
 
 // !!!!!!! ----->>>>>>>> set / get the global default logger pattern
 
