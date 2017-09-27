@@ -63,6 +63,7 @@ typedef struct {
 } log_rule_t;
 
 /* list of different log rules */
+/* empty structs redundant, will be used once rule stuff is generalized with macros */
 struct __rule_null { /* nothing */ };
 struct __rule_stdout { /* nothing */ };
 struct __rule_stderr { /* nothing */ };
@@ -89,39 +90,48 @@ enum {
 
 /* object that describes all loggers */
 typedef struct {
-	const char* const name;
+	const char* name;
 	log_fmt_t* fmt;
-	log_rule_t rule; /* could potentially store a vector of rules */
+	log_rule_t* rule; /* could potentially store a vector of rules */
 
 	unsigned prio;
 	size_t counter;
 } log_logger_t;
 
 /* will be wrapped around w/ macros to define each rule */
-log_logger_t* log_logger_init(const char* name);
+log_logger_t* log_logger_init(const char* name, log_rule_t* r);
 
 /* get a logger or NULL from the global table */
 log_logger_t* log_logger_get(const char* name);
 
+/* dealloc a logger and remove it from the global table */
+void log_logger_free(log_logger_t* l);
+
+/* finally, destroy all globals and unfreed instances */
+void log_free(void);
 
 /* logger getter/setters */
 
-#define log_logger_get_pattern(l) (l->fmt)
+#define log_logger_get_pattern(l) \
+	(l->fmt)
 
-#define log_logger_get_name(l) ((l)->name)
+#define log_logger_get_name(l) \
+	((l)->name)
 
-#define log_logger_get_priority(l, p) ((l)->prio)
+#define log_logger_get_priority(l, p) \
+	((l)->prio)
 
-#define log_logger_canlog(l, p) ((l)->prio >= (p))
+#define log_logger_canlog(l, p) \
+	((l)->prio >= (p))
 
-#define log_logger_set_priority(l, p) do { (l)->prio = (p); } while(0)
+#define log_logger_set_priority(l, p) \
+	do { (l)->prio = (p); } while(0)
 
-#define log_logger_set_pattern(l, p) do { l->fmt = log_compile_pattern(p); } while(0)
+#define log_logger_set_pattern(l, p) \
+	do { l->fmt = log_compile_pattern(p); } while(0)
 
 /* logger generators for rules*/
 /* ... */
-
-/* logger specific function */
 
 /* macros that wrap around log for:
 trace

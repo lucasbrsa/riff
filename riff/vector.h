@@ -97,6 +97,10 @@ signed int vector_eq(vector_t* v1, vector_t* v2);
 #define vector_back(v) \
 	(void*)((v)->data + ((v)->size * (v)->blksz))
 
+/* is the vector empty? */
+#define vector_empty(v) \
+	(!(v)->size)
+
 /* poll data from the structure */
 #define vector_size(v) ((v)->size)
 #define vector_capacity(v) ((v)->capacity)

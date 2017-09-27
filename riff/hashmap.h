@@ -7,7 +7,7 @@
 
 /* hashmap bucket linked-list type */
 typedef struct hashmap_bucket_s {
-	char* key; /* hashable key */
+	const char* key; /* hashable key */
 	void* value; /* stored value */
 	struct hashmap_bucket_s* next; /* points to next element */
 
@@ -26,10 +26,10 @@ hashmap_t* hashmap_create(size_t size);
 void hashmap_free(hashmap_t* map);
 
 /* insert data into the hashmap with a hashable key */
-bool hashmap_set(hashmap_t* map, char* key, void* data);
+bool hashmap_set(hashmap_t* map, const char* key, void* data);
 
 /* retrieve data from the hashmap given a look-up key */
-void* hashmap_get(hashmap_t* map, char* key);
+void* hashmap_get(hashmap_t* map, const char* key);
 
 /* resize the number of buckets to a given new size */
 void* hashmap_resize(hashmap_t* map, size_t new_size);

@@ -8,6 +8,7 @@
 
 /* globals */
 static log_fmt_t* global_fmt = NULL;
+static hashmap_t* global_lmap = NULL;
 
 /* implementations of format specifiers:
  *
@@ -209,4 +210,50 @@ void __handle_rule_basic(log_msg_t* msg, void* impl) {
 void __handle_rule_capped(log_msg_t* msg, void* impl) {
 	struct __rule_capped i = *(struct __rule_capped*)impl;
 	assert(false);
+}
+
+log_logger_t* log_logger_init(const char* name, log_rule_t* r) {
+	if (!global_lmap)
+		global_lmap = hashmap_create(8);
+
+	log_logger_t* l = malloc(sizeof(log_logger_t));
+
+	if (!l || !hashmap_set(global_lmap, name, l))
+		return NULL;
+
+	/* there should be a better way of doing this.. */
+	l->fmt = log_get_pattern(); l->prio = LOG_PRIO_INFO;
+	l->name = name; l->rule = r;
+	l->counter = 0;
+
+	return l;
+}
+
+void log_logger_free(log_logger_t* l) {
+	if (l)
+		free(l);
+
+	/* waiting for implementing of hashmap_remove */
+	/* temporary solution */
+	hashmap_set(global_lmap, l->name, NULL);
+}
+
+log_logger_t* log_logger_get(const char* name) {
+	if (!global_lmap)
+		return NULL;
+
+	return (log_logger_t*)hashmap_get(global_lmap, name);
+}
+
+void log_free(void) {
+	/* iterate over all loggers in the global_lmap */
+	for (log_logger_t* it = hashmap_begin(global_lmap);
+			it != hashmap_end(global_lmap);
+			it = hashmap_next(it)) {
+		if (it)
+			free(it);
+	}
+
+	if (global_fmt)
+		log_free_pattern(global_fmt);
 }
