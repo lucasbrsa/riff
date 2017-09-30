@@ -68,7 +68,7 @@ void vector_pop(vector_t* v, size_t i);
 
 /* compare if two vectors are equal (byte wise comparison) */
 /* sign of ret cannot be trusted, is NOT lexicographic compare */
-signed int vector_eq(vector_t* v1, vector_t* v2);
+bool vector_eq(vector_t* v1, vector_t* v2);
 
 /* remove one element from the tail of a vector */
 #define vector_pop_back(v) \
@@ -78,7 +78,7 @@ signed int vector_eq(vector_t* v1, vector_t* v2);
 #define vector_resize(v, s) \
 	vector_reserve(v, s)
 
-/* get the data stored at index in the vector */
+/* get the data stored at index in the vector, will return a pointer to it */
 #define vector_at(v, i) \
 	(void*)((v)->data + ((i) * (v)->blksz))
 
@@ -100,15 +100,19 @@ signed int vector_eq(vector_t* v1, vector_t* v2);
 #define vector_back(v) \
 	(void*)((v)->data + ((v)->size * (v)->blksz))
 
+/* like a C++11 iterator, put in a for loop */
+#define vector_iterator(v, type, i) \
+	type* i = vector_front(v); i != vector_back(v); i = vector_next(v, i)
+
 /* is the vector empty? */
 #define vector_empty(v) \
 	(!(v)->size)
 
 /* poll data from the structure */
 #define vector_size(v) ((v)->size)
-#define vector_capacity(v) ((v)->capacity)
 #define vector_data(v) ((v)->data)
 #define vector_blksze(v) ((v)->blksze)
+#define vector_capacity(v) ((v)->capacity)
 
 /* mainly for debugging purposes */
 #define vector_print(v, type, fmt_mod) \

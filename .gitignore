@@ -2,6 +2,9 @@
 [Dd]ebug/
 *.sln
 
+# Wait till the project increases in size
+[Dd]ocs/
+
 # User-specific files
 *.suo
 *.user

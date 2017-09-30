@@ -15,12 +15,12 @@ bool vector_realloc(vector_t* v, size_t len) {
 	char* r = realloc(v->data, len * v->blksz);
 
 	if (!r)
-		return 0;
+		return false;
 
 	v->data = r;
 	v->capacity = len;
 
-	return 1;
+	return true;
 }
 
 void vector_call_deletere(vector_t* v, size_t e) {
@@ -39,7 +39,7 @@ void vector_call_deleteri(vector_t* v, size_t l, size_t r) {
 
 bool vector_reserve(vector_t* v, size_t len) {
 	if (len < v->capacity)
-		return 0;
+		return false;
 
 	return vector_realloc(v, len);
 }
@@ -66,7 +66,7 @@ vector_t* vector_copy(const vector_t* v) {
 
 	if (!memcpy(k->data, v->data, v->size * v->blksz)) {
 		vector_free(k);
-		return 0;
+		return NULL;
 	}
 
 	k->size = v->size;
@@ -86,17 +86,17 @@ void vector_free(vector_t* v) {
 bool vector_insert(vector_t* v, size_t index, void* val) {
 	if (v->size+1 > v->capacity)
 		if (!vector_realloc(v, VECTOR_GROWTH(v->capacity)))
-			return 0;
+			return false;
 
 	char* o = v->data + (index * v->blksz);
 
 	if (!memmove(o + v->blksz, o, v->blksz * (v->size - index)))
-		return 0;
+		return false;
 
 	memcpy(o, &val, v->blksz); /* don't feel like checking */
 	v->size++;
 
-	return 1;
+	return true;
 }
 
 bool vector_remove(vector_t* v, size_t index) {
@@ -106,10 +106,10 @@ bool vector_remove(vector_t* v, size_t index) {
 	char* i = v->data + (index * v->blksz);
 
 	if (!memmove(i, i + v->blksz, v->blksz * (v->size - index)))
-		return 0;
+		return false;
 
 	v->size--;
-	return 1;
+	return true;
 }
 
 bool vector_append(vector_t* v, const void* vals, size_t val_count) {
@@ -122,15 +122,15 @@ bool vector_append(vector_t* v, const void* vals, size_t val_count) {
 		while (amnt < new_count);
 
 		if (!vector_realloc(v, amnt))
-			return 0;
+			return false;
 	}
 
 	if (!memcpy(v->data + (v->size * v->blksz), /* & */ vals, v->blksz * val_count))
-		return 0;
+		return false;
 
 	v->size = new_count;
 
-	return 1;
+	return true;
 }
 
 bool vector_push_back(vector_t* v, void* val) {
@@ -148,15 +148,15 @@ void vector_pop(vector_t* v, size_t i) {
 	v->size = v->size - i;
 }
 
-signed int vector_eq(vector_t* v1, vector_t* v2) {
+bool vector_eq(vector_t* v1, vector_t* v2) {
 	if (v1->size != v2->size || v1->blksz != v1->blksz)
-		return 1;
+		return false;
 
 	for (size_t i = 0; i < v1->size * v1->blksz; i++)
 		if (*(char*)(v1->data + i) != *(char*)(v2->data + i))
-			return 1;
+			return false;
 
-	return 0;
+	return true;
 }
 
 void* vector_set(vector_t* v, size_t index, void* val) {

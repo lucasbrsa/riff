@@ -10,7 +10,7 @@
 	do { if (!(m)) return #m; } while(0)
 
 #define test(func) \
-	do { printf("running test on %s\t", #func); const char* k = func(); \
+	do { printf("running test %s:\n", #func); const char* k = func(); \
 	if (k) printf("failed: %s\n", k); else printf("success\n"); } while(0)
 
 const char* vector_test(void);
@@ -49,7 +49,7 @@ const char* vector_test(void) {
 	vector_t* k = vector_copy(m);
 
 	tassert(k);
-	tassert(vector_eq(k, m) == 0);
+	tassert(vector_eq(k, m));
 
 	vector_clear(m);
 
@@ -82,12 +82,17 @@ const char* vector_test(void) {
 }
 
 const char* hashmap_test(void) {
-	hashmap_t* hm = hashmap_init(16);
-	hashmap_set(hm, "james", "is a sick cunt");
-	hashmap_set(hm, "john", "is just a cunt");
+	hashmap_t* hm = hashmap_init(4, NULL);
 
-	tassert(strcmp(hashmap_get(hm, "james"), "is a sick cunt") == 0);
-	tassert(hashmap_get(hm, "peter") == NULL);
+	tassert(hashmap_empty(hm));
+	hashmap_insert(hm, "james", "is a sick cunt");
+	hashmap_insert(hm, "john", "is just a cunt");
+	hashmap_insert(hm, "james", "is a great bloke");
+	tassert(!hashmap_empty(hm));
+
+	tassert(strcmp((char*)hashmap_at(hm, "john"), "is just a cunt") == 0);
+	tassert(strcmp((char*)hashmap_at(hm, "james"), "is a great bloke") == 0);
+	tassert(hashmap_at(hm, "peter") == NULL);
 
 	hashmap_free(hm);
 
