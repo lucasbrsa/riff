@@ -94,6 +94,14 @@ const char* hashmap_test(void) {
 	tassert(strcmp((char*)hashmap_at(hm, "james"), "is a great bloke") == 0);
 	tassert(hashmap_at(hm, "peter") == NULL);
 
+	hashmap_iterator_t it = hashmap_front(hm);
+
+	bool a = *(char**)it.value == (char*)hashmap_at(hm, "john") ;
+	bool b = *(char**)it.value == (char*)hashmap_at(hm, "james") ;
+	tassert(a || b);
+	it = hashmap_next(hm, it);
+	tassert(hashmap_iterator_eq(hashmap_back(hm), it));
+
 	hashmap_free(hm);
 
 	return NULL;
