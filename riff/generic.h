@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <malloc.h>
+#include <string.h>
 
 /* maximum of a and b */
 #define MAX(a, b) ((a > b) ? a : b)
@@ -25,21 +27,6 @@
 
 /* the floor of a / b */
 #define CEILD(a, b)  (((a) + (b) - 1) / (b))
-
-/* type based swapper, to be used in most situations */
-#define SWAP(a, b, type) \
-	do { (type) __swap__ = a; a = b; b = __swap__; } while(0)
-
-/* (super inefficient) byte by byte swapper */
-#define BSWAP(a, b, blen) \
-	do { \
-		char __tmp; \
-		for (size_t i = 0; i < blen;) { \
-			__tmp = *((char*)(a) + i); \
-			*((char*)(a) + i) = *((char*)(b) + i); \
-			*((char*)(b) + i) = __tmp; \
-		} \
-	} while(0)
 
 /* determine compiler */
 #if defined(__clang__)

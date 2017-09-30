@@ -214,7 +214,7 @@ void __handle_rule_capped(log_msg_t* msg, void* impl) {
 
 log_logger_t* log_logger_init(const char* name, log_rule_t* r) {
 	if (!global_lmap)
-		global_lmap = hashmap_create(8);
+		global_lmap = hashmap_init(8);
 
 	log_logger_t* l = malloc(sizeof(log_logger_t));
 
@@ -230,12 +230,12 @@ log_logger_t* log_logger_init(const char* name, log_rule_t* r) {
 }
 
 void log_logger_free(log_logger_t* l) {
-	if (l)
-		free(l);
-
 	/* waiting for implementing of hashmap_remove */
 	/* temporary solution */
 	hashmap_set(global_lmap, l->name, NULL);
+
+	if (l)
+		free(l);
 }
 
 log_logger_t* log_logger_get(const char* name) {
@@ -247,12 +247,12 @@ log_logger_t* log_logger_get(const char* name) {
 
 void log_free(void) {
 	/* iterate over all loggers in the global_lmap */
-	for (log_logger_t* it = hashmap_begin(global_lmap);
-			it != hashmap_end(global_lmap);
-			it = hashmap_next(it)) {
-		if (it)
-			free(it);
-	}
+	/* for (log_logger_t* it = hashmap_begin(global_lmap); */
+			 /* it != hashmap_end(global_lmap); */
+			 /* it = hashmap_next(it)) { */
+		/* if (it) */
+			/* free(it); */
+	/* } */
 
 	if (global_fmt)
 		log_free_pattern(global_fmt);

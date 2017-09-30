@@ -44,6 +44,9 @@ bool vector_reserve(vector_t* v, size_t len);
 /* append multiple elements to the end of the vector */
 bool vector_append(vector_t* v, const void* vals, size_t val_count);
 
+/* add one element to the end of the vector */
+bool vector_push_back(vector_t* v, void* val);
+
 /* delete all elements of the vector */
 void vector_clear(vector_t* v);
 
@@ -79,9 +82,9 @@ signed int vector_eq(vector_t* v1, vector_t* v2);
 #define vector_at(v, i) \
 	(void*)((v)->data + ((i) * (v)->blksz))
 
-/* remove element from the end of the vector */
-#define vector_push_back(v, e) \
-	(bool)(vector_append((v), (e), 1))
+/* get, and dereference, the data stored at index in the vector */
+#define vector_att(v, i, t) \
+	*(t*)((v)->data + ((i) * (v)->blksz))
 
 /* iterators, done via pointer comparison */
 

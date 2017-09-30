@@ -105,7 +105,7 @@ bool vector_remove(vector_t* v, size_t index) {
 
 	char* i = v->data + (index * v->blksz);
 
-	if (!memmove(i + v->blksz, i, v->blksz * (v->size - index)))
+	if (!memmove(i, i + v->blksz, v->blksz * (v->size - index)))
 		return 0;
 
 	v->size--;
@@ -125,13 +125,16 @@ bool vector_append(vector_t* v, const void* vals, size_t val_count) {
 			return 0;
 	}
 
-	/* super important, is it possible to just copy the adress of vals? */
 	if (!memcpy(v->data + (v->size * v->blksz), /* & */ vals, v->blksz * val_count))
 		return 0;
 
 	v->size = new_count;
 
 	return 1;
+}
+
+bool vector_push_back(vector_t* v, void* val) {
+	return vector_append(v, &val, 1);
 }
 
 void vector_pop(vector_t* v, size_t i) {
@@ -147,10 +150,10 @@ void vector_pop(vector_t* v, size_t i) {
 
 signed int vector_eq(vector_t* v1, vector_t* v2) {
 	if (v1->size != v2->size || v1->blksz != v1->blksz)
-		return v1->size - v2->size;
+		return 1;
 
-	for (size_t i = 0; i < v1->size; i++)
-		if (memcmp(vector_at(v1, i), vector_at(v2, i), v1->blksz) != 0)
+	for (size_t i = 0; i < v1->size * v1->blksz; i++)
+		if (*(char*)(v1->data + i) != *(char*)(v2->data + i))
 			return 1;
 
 	return 0;
@@ -172,8 +175,16 @@ void vector_clear(vector_t* v) {
 
 void vector_swap(vector_t* v1, vector_t* v2) {
 	assert(v1->blksz == v2->blksz);
-	ssize_t k = MIN(v1->size, v2->size);
+	ssize_t cap = MIN(v1->capacity, v2->capacity);
+	ssize_t byt = cap * v1->blksz;
 
-	while (--k > 0)
-		BSWAP(vector_at(v1, k), vector_at(v2, k), k * v1->blksz);
+	void* tmp = malloc(byt);
+	memcpy(tmp, v1->data, byt);
+	memcpy(v1->data, v2->data, byt);
+	memcpy(v2->data, tmp, byt);
+	free(tmp);
+
+	v1->size ^= v2->size;
+	v2->size ^= v1->size;
+	v1->size ^= v2->size;
 }

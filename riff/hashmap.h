@@ -1,26 +1,28 @@
+/* @TODO add hashmap deleters */
+
 #ifndef _HASHMAP_H
 #define _HASHMAP_H
 
 #include "generic.h"
 
-#include <string.h>
+/* number of buckets may not go below this */
+#define HASHMAP_MINSIZE (4)
 
-/* hashmap bucket linked-list type */
+/* bucket is a singly linked-list type */
 typedef struct hashmap_bucket_s {
-	const char* key; /* hashable key */
-	void* value; /* stored value */
-	struct hashmap_bucket_s* next; /* points to next element */
-
+	const char* key;
+	void* value;
+	struct hashmap_bucket_s* next;
 } hashmap_bucket_t;
 
-/* defines the internal representation of a hashmap */
+/* a hashmap is an array of buckets */
 typedef struct {
-	hashmap_bucket_t* buckets; /* holds a variably sized list of buckets */
-	size_t size; /* number of buckets */
+	hashmap_bucket_t* buckets;
+	size_t size;
 } hashmap_t;
 
 /* create and initialise a hashmap with some size */
-hashmap_t* hashmap_create(size_t size);
+hashmap_t* hashmap_init(size_t size);
 
 /* free all the memory used by a hashmap */
 void hashmap_free(hashmap_t* map);
@@ -34,6 +36,9 @@ void* hashmap_get(hashmap_t* map, const char* key);
 /* resize the number of buckets to a given new size */
 void* hashmap_resize(hashmap_t* map, size_t new_size);
 
+/* get the int hash of a string */
+unsigned hashmap_hash(const char* k);
+
 /* get the data stored at index */
 #define hashmap_at(map, idx) \
 	((map)->buckets + ((idx) * sizeof(hashmap_bucket_t)))
@@ -46,12 +51,27 @@ void* hashmap_resize(hashmap_t* map, size_t new_size);
 #define hashmap_end(map) \
 	((map)->buckets + ((map)->size * sizeof(hashmap_bucket_t)))
 
-/* get the next bucket, for iteration */
-#define hashmap_next(it) \
-	((it) += sizeof(hashmap_bucket_t))
-
 /* poll the length of the map */
 #define hashmap_size(map) \
 	((map)->size)
+
+/* needed functions */
+/* empty? */
+/* size */
+/* max_size */
+/* back */
+/* front */
+/* next */
+/* at */
+/* find */
+/* mcount */
+/* insert */
+/* erase */
+/* clear */
+/* swap */
+/* bucket_count */
+/* max_bucket_count */
+/* bucket */
+/* reserve */
 
 #endif

@@ -1,90 +1,52 @@
 #include "hashmap.h"
 
+#include <math.h>
 #include <malloc.h>
+#include <string.h>
 
-/* hash a key (string of characters) using the hashmap size */
-unsigned int get_hashcode(const char* key);
+#define GET_INDEX(h, s) \
+	(+((h) % (s)))
 
-/* get a bucket index from a hashed key, given the hashmap size */
-unsigned int get_index(unsigned hashcode, size_t s);
-
-/* raise a number to a power, useful for the hashing algorithm implemented */
-int power(int base, int exponent);
-
-/* insert data into the hashmap */
-bool insert(hashmap_bucket_t* list, const char* key, void* value);
-
-/* search for a key-value pair in the hashmap */
-void* search(hashmap_t* map, const char* key);
-
-unsigned int get_hashcode(const char* key) {
+unsigned int hashmap_hash(const char* key) {
 	unsigned int hashcode = 0, len = (key)?strlen(key):0;
 
-	/* uses the Java hashing algorithm */
 	for (int i = 0; i < len; i++) {
-		hashcode += (int)key[i] * power(31, len - (i + 1));
+		/* uses the Java hashing algorithm */
+		hashcode += (int)key[i] * (int)pow(31.0, (double)(len - (i + 1)));
 	}
 
 	return hashcode;
 }
 
-unsigned int get_index(unsigned hashcode, size_t s) {
-	return +(hashcode % s); /* std::abs is too kool for me */
-}
-
-hashmap_t* hashmap_create(size_t size) {
+hashmap_t* hashmap_init(size_t size) {
 	hashmap_t* h = malloc(sizeof(hashmap_t));
 
 	if (h) {
-		h->buckets = calloc(sizeof(hashmap_bucket_t), size);
-
-		h->size = size;
+		h->size = (size > HASHMAP_MINSIZE)? size : HASHMAP_MINSIZE;
+		h->buckets = calloc(sizeof(hashmap_bucket_t), h->size);
 	}
 
 	return h;
 }
 
 void hashmap_free(hashmap_t* map) {
-
 	for (int i = 0; i < map->size; i++)
 	{
-		hashmap_bucket_t* b = &map->buckets[i];
-		while (b->next != NULL) {
+		/* only free individual members if they are NOT the head of the ll */
+		hashmap_bucket_t* b = map->buckets[i].next;
+		while (b && b->next) {
 			hashmap_bucket_t* t = b;
-			b = t->next;
-			free(b);
+			b = b->next;
+			free(t);
 		}
-
-		//free((void*)&map->buckets[i]);
 	}
 
 	free(map);
 }
 
 bool hashmap_set(hashmap_t* map, const char* key, void* value) {
-	/* calculate the bucket we'll be inserting into */
-	hashmap_bucket_t* hb = &map->buckets[get_index(get_hashcode(key), map->size)];
+	hashmap_bucket_t* head = &map->buckets[GET_INDEX(hashmap_hash(key), map->size)];
 
-	return insert(hb, key, value);
-}
-
-void* hashmap_get(hashmap_t* map, const char* key) {
-	return search(map, key);
-}
-
-int power(int base, int exponent) {
-	/* so we don't get caught out!1!! */
-	if (!exponent) return 1;
-
-	/* yeah yeah iterate and be cool */
-	int result = 1;
-	for (int i = 0; i < exponent; i++)
-		result *= base;
-
-	return result;
-}
-
-bool insert(hashmap_bucket_t* head, const char* key, void* value) {
 	// if (!head || !key || !value) { return 0; }
 
 	if (!head || !key)
@@ -92,13 +54,12 @@ bool insert(hashmap_bucket_t* head, const char* key, void* value) {
 
 	if (head->next != NULL)
 	{
-
 		hashmap_bucket_t* current = head;
 
 		do {
 			if (!strcmp(current->key, key)) {
 				current->value = value;
-				goto ret;
+				return 1;
 			}
 			current = current->next;
 		} while (current->next != NULL);
@@ -119,19 +80,19 @@ bool insert(hashmap_bucket_t* head, const char* key, void* value) {
 		head->next->value = NULL;
 	}
 
-ret:
 	return 1;
 }
 
-void* search(hashmap_t* map, const char* key) {
+void* hashmap_get(hashmap_t* map, const char* key) {
 	/* calculate which bucket is of interest */
-	hashmap_bucket_t* current = &(map->buckets[get_index(get_hashcode(key), map->size)]);
+	hashmap_bucket_t* current = &(map->buckets[GET_INDEX(hashmap_hash(key), map->size)]);
 
-	if (!map || !key) { return 0; }
+	if (!map || !key || !current->next)
+		return 0;
 
 	/* step through, checking if the key matches and return if it does */
 	do {
-		if (!strcmp(current->key, key))
+		if (current->key && !strcmp(current->key, key))
 			return current->value;
 		current = current->next;
 	} while (current->next != NULL);
