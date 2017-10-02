@@ -101,10 +101,8 @@
 /* modify some keywords to be more cross platform */
 
 /* help allow for CPP compilation */
-#if __STDC_VERSION__ >= 199901L || defined(__cplusplus) || defined(_MSC_VER)
-#	define INLINE inline
-#else
-#	define INLINE /* */
+#if (__STDC_VERSION__ < 199901L && ! defined(__cplusplus) && ! defined(_MSC_VER))
+#	define inline /* */
 #endif
 
 #if _WIN64 /* should be a better cross compiler way */

@@ -1,5 +1,6 @@
 #include "str.h"
 
+#include <math.h>
 #include <stdio.h> /* can be removed once int2hex() is implemented */
 #include <malloc.h>
 #include <string.h>
@@ -49,8 +50,8 @@ char* str_uits(uint64_t u, char buf[__UI64_MAXS]) {
 	return end;
 }
 
-char* str_sits(int64_t s, char buf[__SI64_MAXS]) {
-	buf = str_uits(s, buf);
+char* str_its(int64_t s, char buf[__SI64_MAXS]) {
+	buf = str_uits((s < 0)? -s : s, buf);
 
 	// if ((!!s) | -(int)((unsigned)s >> (63)))
 	if (s < 0)
@@ -120,12 +121,13 @@ void str_free_ttble(str_ttble_t* t) {
 }
 
 char* str_filter(char* dest, const char* src, bool(func)(char)) {
+	char* d = dest;
 	for (const char* c = src; *c; c++)
 		if ((*func)(*c))
 			*dest++ = *c;
 
 	*dest = 0;
-	return dest;
+	return d;
 }
 
 size_t str_find_substr(const char* src, const char* sub) {
@@ -180,9 +182,11 @@ char* str_replace(char* dest, const char* src, const char* s1, const char* s2) {
 
 ssize_t str_search(const char* src, char t) {
 	size_t i = 0;
-	while (*(src + i++))
+	do {
 		if (*(src + i) == t)
 			return i;
+	} while (*(src + ++i));
+
 	return -1;
 }
 
@@ -206,6 +210,7 @@ char* str_find_chr(char* src, char c) {
 ssize_t str_searcho(str_ostr_t src, ssize_t l, ssize_t r, char t) {
 	if (r >= l) {
 		ssize_t m = (r-l)/2+l;
+
 		if (*(src+m) == t) return m;
 		if (*(src+m) > t) return str_searcho(src, l, m - 1, t);
 		else return str_searcho(src, m + 1, r, t);
@@ -223,25 +228,25 @@ size_t str_find_first(const char* src, const char* search) {
 
 size_t str_find_firstn(const char* src, const char* search) {
 	for (size_t i = 0; *(src + i); i++)
-		if (!str_search(search, *(src + i)))
+		if (str_search(search, *(src + i)) == -1)
 			return i;
 
 	return 0;
 }
 
 size_t str_find_last(const char* src, const char* search) {
-	size_t i = strlen(src);
+	size_t i = strlen(src) - 1;
 	for (; i; i--)
-		if (str_search(search, *(src + i)))
+		if (str_search(search, *(src + i)) != -1)
 			return i;
 
 	return 0;
 }
 
 size_t str_find_lastn(const char* src, const char* search) {
-	size_t i = strlen(src);
+	size_t i = strlen(src) - 1;
 	for (; i; i--)
-		if (!str_search(search, *(src + i)))
+		if (str_search(search, *(src + i)) == -1)
 			return i;
 
 	return 0;
@@ -249,17 +254,19 @@ size_t str_find_lastn(const char* src, const char* search) {
 
 char* str_toupper(char* buf) {
 	char* b = buf;
-	while (*b++)
+	do {
 		if (STR_ISLOWER(*b))
 			*b &= '_';
+	} while (*++b);
 	return buf;
 }
 
 char* str_tolower(char* buf) {
 	char* b = buf;
-	while (*b++)
+	do {
 		if (STR_ISUPPER(*b))
 			*b |= ' ';
+	} while (*++b);
 	return buf;
 }
 
@@ -268,7 +275,7 @@ char* str_swap_case(char* buf) {
 	do {
 		if (STR_ISLATIN(*b))
 			*b ^= ' ';
-	} while (*b++);
+	} while (*++b);
 
 	return buf;
 }
@@ -277,7 +284,7 @@ size_t str_cpy(char* dest, const char* src) {
 	const char* s = src;
 	do {
 		*dest++ = *s;
-	} while (*++s);
+	} while (*s++);
 	return (size_t)(s - src);
 }
 
@@ -438,51 +445,51 @@ char* str_escape(char* dest, const char* src) {
 	return dest;
 }
 
-str_stble_t* str_splitn(const char* src, char delimiter, size_t max, str_stble_t* out) {
+str_stble_t str_splitn(const char* src, char delimiter, size_t max) {
+	str_stble_t out;
 	size_t srlen = strlen(src)+1;
-	out->refbuf = malloc(srlen);
-	memcpy(out->refbuf, src, srlen);
+	out.refbuf = malloc(srlen);
+	memcpy(out.refbuf, src, srlen);
 
 	char *k, **it;
-	for (k = out->refbuf, out->n = 0; k; out->n++)
+	for (k = out.refbuf, out.n = 0; k; out.n++)
 		k = str_find_chr(k, delimiter);
 
-	if (max && out->n > max)
-		out->n = max;
+	if (max && out.n > max)
+		out.n = max;
 
-	out->tble = it = malloc(sizeof(char*) * out->n);
-	if (!it)
-		return NULL;
+	out.tble = it = malloc(sizeof(char*) * out.n);
 
-	int i;
-	for (i = 0, k = out->refbuf; i < out->n; i++) {
-		*it++ = k;
-		k = str_find_chr(k, delimiter);
+	if (it) {
+		int i;
+		for (i = 0, k = out.refbuf; i < out.n; i++) {
+			*it++ = k;
+			k = str_find_chr(k, delimiter);
 
-		if (out->n - i - 1)
-			*k++ = 0;
+			if (out.n - i - 1)
+				*k++ = 0;
+		}
 	}
 
 	return out;
 }
 
-void str_free_split(str_stble_t* sres) {
-	if (!sres)
-		return;
-	if (sres->tble)
-		free(sres->tble);
-	if (sres->refbuf)
-		free(sres->refbuf);
+void str_free_split(str_stble_t sres) {
+	if (sres.tble)
+		free(sres.tble);
+
+	if (sres.refbuf)
+		free(sres.refbuf);
 }
 
-char* str_join(char* dest, char delimiter, const str_stble_t* in) {
+char* str_join(char* dest, char delimiter, const str_stble_t in) {
 	char* d = dest;
-	for (int i = 0; i < in->n; i++) {
-		size_t l = strlen(in->tble[i]);
-		memcpy(d, in->tble[i], l);
+	for (int i = 0; i < in.n; i++) {
+		size_t l = strlen(in.tble[i]);
+		memcpy(d, in.tble[i], l);
 		d += l;
 
-		if (in->n - i - 1)
+		if (in.n - i - 1)
 			*d++ = delimiter;
 	} *d = 0;
 
@@ -490,7 +497,7 @@ char* str_join(char* dest, char delimiter, const str_stble_t* in) {
 }
 
 char* str_fmt_time(time_t t, char* dest, size_t destlen, const char* fmt) {
-	/* idea for static time buf stolen from: https://github.com/happyfish100/libfastcommon */
+	/* idea for static time buf stolen from: happyfish100 - libfastcommon */
 	static char sbuf[64];
 
 	if (dest) {
@@ -506,7 +513,7 @@ char* str_fmt_time(time_t t, char* dest, size_t destlen, const char* fmt) {
 
 char* str_time_DDMMYYYY(time_t t, char* dest, size_t destlen) {
 	struct tm* tinf = localtime(&t);
-	snprintf(dest, destlen, "%02d%02d%04d",
+	snprintf(dest, destlen, "%02d-%02d-%04d",
 		tinf->tm_mday, tinf->tm_mon + 1, tinf->tm_year + 1900);
 
 	return dest;
@@ -514,7 +521,7 @@ char* str_time_DDMMYYYY(time_t t, char* dest, size_t destlen) {
 
 char* str_time_HHMMSS(time_t t, char* dest, size_t destlen) {
 	struct tm* tinf = localtime(&t);
-	snprintf(dest, destlen, "%02d%02d%02d",
+	snprintf(dest, destlen, "%02d:%02d:%02d",
 		tinf->tm_hour, tinf->tm_min, tinf->tm_sec);
 
 	return dest;
@@ -522,7 +529,7 @@ char* str_time_HHMMSS(time_t t, char* dest, size_t destlen) {
 
 char* str_time_YYYYMMDDHHMMSS(time_t t, char* dest, size_t destlen) {
 	struct tm* tinf = localtime(&t);
-	snprintf(dest, destlen, "%04d%02d%02d%02d%02d%02d",
+	snprintf(dest, destlen, "%04d-%02d-%02d %02d:%02d:%02d",
 		tinf->tm_year + 1900, tinf->tm_mon + 1, tinf->tm_mday,
 		tinf->tm_hour, tinf->tm_min, tinf->tm_sec);
 
@@ -546,8 +553,6 @@ size_t str_len_excluding(const char* src, const char* exclusions) {
 
 	return l;
 }
-
-
 
 /// @TODO
 //char* str_reltoabs_path(char* dest, const char* rel, const char* path) {
