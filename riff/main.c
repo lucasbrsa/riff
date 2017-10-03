@@ -96,29 +96,50 @@ tdeclare(vector_test) {
 	tsuccess();
 }
 
+void iscool(hashmap_bucket_t* b, void* v) {
+	if (strcmp(b->key, "cameron") == 0)
+		str_cpy(v, b->value);
+}
+
 tdeclare(hashmap_test) {
 	hashmap_t* hm = hashmap_init(4, NULL);
 
 	tassert(hashmap_empty(hm));
-	hashmap_insert(hm, "james", "is a sick cunt");
-	hashmap_insert(hm, "john", "is just a cunt");
-	hashmap_insert(hm, "james", "is a great bloke");
-	tassert(!hashmap_empty(hm));
+	hashmap_set(hm, "james", "is a sick cunt");
+	hashmap_set(hm, "john", "is just a cunt");
+	hashmap_set(hm, "james", "is a great bloke");
+	hashmap_remove(hm, "john");
+	tassert(hashmap_size(hm) == 1);
 
-	tassertstreq((char*)hashmap_at(hm, "john"), "is just a cunt");
-	tassertstreq((char*)hashmap_at(hm, "james"), "is a great bloke");
-	tassert(hashmap_at(hm, "peter") == NULL);
+	tassertstreq(hashmap_get(hm, "james"), "is a great bloke");
+	tassert(hashmap_get(hm, "peter") == NULL);
 
-	hashmap_iterator_t it = hashmap_front(hm);
+	hashmap_set(hm, "jim", "is lame");
+	hashmap_set(hm, "jerry", "is stupid");
+	hashmap_set(hm, "rick", "is smart");
+	hashmap_set(hm, "beth", "is annoying");
+	hashmap_set(hm, "summer", "is eh");
+	hashmap_set(hm, "morty", "is named after an old jewish comedian");
+	hashmap_set(hm, "cameron", "is a god");
+	hashmap_set(hm, "ruchir", "is a demigod");
 
-	bool a = *(char**)it.value == (char*)hashmap_at(hm, "john") ;
-	bool b = *(char**)it.value == (char*)hashmap_at(hm, "james") ;
-	tassert(a || b);
+	char* buffer = malloc(128);
+	hashmap_iterate(hm, iscool, buffer);
+	tassertstreq(buffer, "is a god");
 
-	/* iterators aren't working yet */
-	/* it = hashmap_next(hm, it); */
-	/* hashmap_iterator_t mit = hashmap_back(hm); */
-	/* tassert(hashmap_iterator_eq(mit, it)); */
+	hashmap_set(hm, "cameron", "is an idiot");
+	hashmap_set(hm, "ruchir", "is a god");
+
+	hashmap_remove(hm, "james");
+	hashmap_remove(hm, "jim");
+	hashmap_remove(hm, "jerry");
+	hashmap_remove(hm, "rick");
+	hashmap_remove(hm, "beth");
+	hashmap_remove(hm, "summer");
+	hashmap_remove(hm, "morty");
+
+	tassert(hashmap_get(hm, "rick") == NULL);
+	tassert(hashmap_get(hm, "beth") == NULL);
 
 	hashmap_free(hm);
 
@@ -228,10 +249,8 @@ tdeclare(str_test) {
 
 	tassertstreq(str_remove(buffer, "Hello world!", "Hello "), "world!");
 
-	/* iterators could do with more tests... */
 	char* c = str_dup("meme");
-
-	for (str_iter(c, it))
+	for (str_iterator(c, it))
 		c[it.i] = it.c + 1;
 
 	tassertstreq(c, "nfnf");

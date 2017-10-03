@@ -22,28 +22,18 @@ size_t hashmap_hash(hashmap_t* map, const char* key) {
 	size_t hashcode = 0, len = (key)?strlen(key):0;
 
 	/* java hashing algorithm */
-	for (int i = 0; i < len; i++) {
-		hashcode += (size_t)key[i] * (size_t)pow(31.0, (double)(len - (i + 1)));
-	}
+	for (signed i = 0; i < len; i++)
+		hashcode += (size_t)(key[i] * pow(31.0, (double)(len - (i + 1))));
 
-	return +(hashcode % map->size);
+	return hashcode % map->size;
 }
 
 void hashmap_free(hashmap_t* map) {
-	if (hashmap_empty(map)) {
-		free(map);
-		return;
-	}
+	for (size_t i = 0; i < map->size; i++) {
+		hashmap_bucket_t *b = hashmap_nbucket(map, i)->next, *t;
 
-	for (int i = 0; i < map->size; i++) {
-		hashmap_bucket_t* b = map->buckets[i].next;
-
-		if (map->del)
-			free(map->buckets[i].value);
-
-		/* only free individual members if they are NOT the head of the ll */
-		while (b && b->next) {
-			hashmap_bucket_t* t = b;
+		while (b) {
+			t = b;
 			b = b->next;
 
 			if (map->del)
@@ -51,62 +41,120 @@ void hashmap_free(hashmap_t* map) {
 
 			free(t);
 		}
+
+		if (map->del)
+			free(hashmap_nbucket(map, i)->value);
 	}
 
 	free(map);
 }
 
-bool hashmap_insert(hashmap_t* map, const char* key, void* value) {
-	hashmap_bucket_t* head = hashmap_bucket(map, key);
+void hashmap_iterate(hashmap_t* map, void(*func)(hashmap_bucket_t*, void*), void* extra) {
+	if (hashmap_empty(map)) return;
 
-	if (!head || !key)
+	for (size_t i = 0; i < map->size; i++) {
+		hashmap_bucket_t* b = hashmap_nbucket(map, i);
+
+		if (b->key)
+			for (; b; b = b->next)
+				func(b, extra);
+	}
+}
+
+bool hashmap_set(hashmap_t* map, const char* key, void* value) {
+	hashmap_bucket_t *head = hashmap_bucket(map, key), *it;
+
+	if (!key)
 		return false;
 
-	if (head->next)
+	if (head->key)
 	{
-		hashmap_bucket_t* current = head;
-
-		do {
-			if (!strcmp(current->key, key)) {
-				current->value = value;
+		for (it = head; it; it = it->next) {
+			if (it->key && strcmp(it->key, key) == 0) {
+				head->value = value;
 				return true;
 			}
-			current = current->next;
-		} while (current->next);
+		}
 
-		hashmap_bucket_t* hb = malloc(sizeof(hashmap_bucket_t));
+		it = malloc(sizeof(hashmap_bucket_t));
+		it->next = head->next;
+		it->key = key;
+		it->value = value;
 
-		hb->next = head->next;
-		hb->key = key;
-		hb->value = value;
-		head->next = hb;
+		head->next = it;
 
 	}
 	else {
 		head->key = key;
 		head->value = value;
-		head->next = calloc(sizeof(hashmap_bucket_t), 1);
 	}
 
 	map->imems++;
+
 	return true;
 }
 
-void* hashmap_at(hashmap_t* map, const char* key) {
-	/* calculate which bucket is of interest */
+void* hashmap_get(hashmap_t* map, const char* key) {
 	hashmap_bucket_t* current = hashmap_bucket(map, key);
 
-	if (!map || !key || !current->next)
-		return 0;
+	if (!key || !current->key)
+		return NULL;
 
-	/* step through, checking if the key matches and return if it does */
-	do {
-		if (current->key && !strcmp(current->key, key))
+	while (current) {
+		if (current->key && strcmp(current->key, key) == 0)
 			return current->value;
-		current = current->next;
-	} while (current->next != NULL);
 
-	return 0;
+		current = current->next;
+	}
+
+	return NULL;
+}
+
+bool hashmap_remove(hashmap_t* map, const char* key) {
+	hashmap_bucket_t* target = hashmap_bucket(map, key);
+
+	if (!key || !target->key)
+		return false;
+
+	map->imems--;
+
+	if (target->key && strcmp(target->key, key) == 0) {
+		if (!target->next)
+			memset(target, 0, sizeof(hashmap_bucket_t));
+		else {
+			hashmap_bucket_t* btmp = target->next;
+			memcpy(target, target->next, sizeof(hashmap_bucket_t));
+			free(btmp);
+		}
+	}
+
+	while (target) {
+		if (target->key && strcmp(target->key, key) == 0) {
+			if (!target->next)
+				memset(target, 0, sizeof(hashmap_bucket_t));
+			else {
+				hashmap_bucket_t* btmp = target->next;
+				memcpy(target, target->next, sizeof(hashmap_bucket_t));
+				free(btmp);
+			}
+		}
+
+		target = target->next;
+	}
+}
+
+const char* hashmap_find(hashmap_t* map, void* value) {
+	for (size_t it = 0; it < map->size; it++) {
+		hashmap_bucket_t* b = hashmap_nbucket(map, it);
+		while (b->next) {
+			if (b->value == value)
+				return b->key;
+
+			b = b->next;
+		}
+	}
+
+	return NULL;
 }
 
 size_t hashmap_bucket_size(hashmap_t* map, size_t n) {
@@ -122,81 +170,4 @@ size_t hashmap_bucket_size(hashmap_t* map, size_t n) {
 	}
 
 	return r;
-}
-
-bool hashmap_exists(hashmap_t* map, const char* key);
-
-hashmap_iterator_t hashmap_front(hashmap_t* map) {
-	hashmap_iterator_t it = { 0 };
-
-	if (!hashmap_empty(map)) {
-		for (; it.bucketno < map->size; it.bucketno++) {
-			hashmap_bucket_t* b = hashmap_nbucket(map, it.bucketno);
-
-			if (b->next) {
-				it.key = &b->key;
-				it.value = &b->value;
-				break;
-			}
-		}
-	}
-
-	return it;
-}
-
-hashmap_iterator_t hashmap_next(hashmap_t* map, hashmap_iterator_t it) {
-	hashmap_iterator_t res = { 0 };
-	res.bucketno = it.bucketno;
-
-	hashmap_bucket_t* b;
-	for (b = hashmap_nbucket(map, it.bucketno); b->next; b = b->next)
-		if (it.value == &b->value && it.key == &b->key)
-			break;
-
-	if (b->next && b->next->next) {
-		res.key = &b->next->key;
-		res.value = &b->next->value;
-		return res;
-	}
-
-	if (b->next)
-		res.bucketno++;
-
-	for (; res.bucketno < map->size; res.bucketno++) {
-		b = hashmap_nbucket(map, res.bucketno);
-		while (b->next) {
-			if (it.value == &b->value && it.key == &b->key) {
-				res.key = &b->key;
-				res.value = &b->value;
-
-				return res;
-			}
-
-			b = b->next;
-		}
-	}
-
-	/* this should never happen if iteration is done properly */
-	return res;
-}
-
-hashmap_iterator_t hashmap_back(hashmap_t* map) {
-	hashmap_iterator_t it = { 0 };
-
-	if (!hashmap_empty(map)) {
-		it.bucketno = map->size;
-
-		while (it.bucketno > 0) {
-			it.bucketno--;
-
-			hashmap_bucket_t* b = hashmap_nbucket(map, it.bucketno);
-			if (b->next) {
-				it.key = &b->key;
-				it.value = &b->value;
-				break;
-			}
-		}
-	}
-
-	return it;
 }

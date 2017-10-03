@@ -217,31 +217,11 @@ typedef struct {
 	size_t i;
 } str_iterator_t;
 
-/* string iterators: are two iterators equal */
-#define str_iterator_eq(a, b) \
-	(a.beg == b.beg && a.end == b.end && a.i == b.i && a.c == b.c)
-
-/* string iterator: declare an iterator */
-#define str_iterator_init(src) \
-	{ .beg=src, .end=src+strlen(src), .i=0, .c = *src }
-
-/* string iterators: go forward a char */
-#define str_iterator_next(it) \
-	(it.c = *(++it.i + it.beg))
-
-/* string iterators: go back a char */
-#define str_iterator_prev(it) \
-	(it.c = *(--it.i + it.beg))
-
-/* string iterators: is end */
-#define str_iterator_end(it) \
-	(it.end == (it.beg + it.i))
-
-/* string iterators: entire iterator */
-#define str_iter(c, it) \
-	str_iterator_t it = str_iterator_init(c); \
-	!str_iterator_end(it); \
-	str_iterator_next(it)
+/* string iterator, provides nice way of looping through a string */
+#define str_iterator(src, it) \
+	str_iterator_t it = { .beg=src, .end=src+strlen(src), .i=0, .c = *src }; \
+	it.end != (it.beg + it.i); \
+	it.c = *(++it.i + it.beg)
 
 /* is it a number */
 #define STR_ISARABIC(c)		((c) >= '0' && (c) <= '9')
