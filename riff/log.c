@@ -162,7 +162,7 @@ void log_free_pattern(log_fmt_t* f) {
 void log_format(log_fmt_t* f, log_msg_t* m) {
 	char* beg = m->formatted = malloc(128);
 	for (void* it = vector_front(f->stack); it != vector_back(f->stack); it = vector_next(f->stack, it)) {
-		log_fpair_t tmp = **(log_fpair_t**)(it);
+		log_fpair_t tmp = **(log_fpair_t**)(it); /* FIX THIS POINTER NONSENSE */
 
 		assert(tmp.type == LOG_FMT_STRR || tmp.type == LOG_FMT_CBAK);
 
@@ -188,17 +188,14 @@ log_fmt_t* log_get_pattern(void) {
 }
 
 void __handle_rule_null(log_msg_t* msg, void* impl) {
-	struct __rule_null i = *(struct __rule_null*)impl;
 	return;
 }
 
 void __handle_rule_stdout(log_msg_t* msg, void* impl) {
-	struct __rule_stdout i = *(struct __rule_stdout*)impl;
 	fputs(msg->formatted, stdout);
 }
 
 void __handle_rule_stderr(log_msg_t* msg, void* impl) {
-	struct __rule_stderr i = *(struct __rule_stderr*)impl;
 	fputs(msg->formatted, stderr);
 }
 
@@ -209,33 +206,33 @@ void __handle_rule_basic(log_msg_t* msg, void* impl) {
 
 void __handle_rule_capped(log_msg_t* msg, void* impl) {
 	struct __rule_capped i = *(struct __rule_capped*)impl;
-	assert(false);
+	fseek(i.target, 0L, SEEK_END);
+	size_t sz = ftell(i.target);
+
+	if (sz < i.lim)
+		fputs(msg->formatted, i.target);
 }
 
 log_logger_t* log_logger_init(const char* name, log_rule_t* r) {
 	if (!global_lmap)
-		global_lmap = hashmap_init(8, NULL);
+		global_lmap = hashmap_init(8, free);
 
 	log_logger_t* l = malloc(sizeof(log_logger_t));
 
 	if (!l || !hashmap_set(global_lmap, name, l))
 		return NULL;
 
-	/* there should be a better way of doing this.. */
-	l->fmt = log_get_pattern(); l->prio = LOG_PRIO_INFO;
-	l->name = name; l->rule = r;
+	l->fmt = log_get_pattern();
+	l->prio = LOG_PRIO_INFO;
 	l->counter = 0;
+	l->name = name;
+	l->rule = r;
 
 	return l;
 }
 
 void log_logger_free(log_logger_t* l) {
-	/* waiting for implementing of hashmap_remove */
-	/* temporary solution */
-	hashmap_set(global_lmap, l->name, NULL);
-
-	if (l)
-		free(l);
+	hashmap_remove(global_lmap, l->name);
 }
 
 log_logger_t* log_logger_get(const char* name) {
@@ -246,14 +243,32 @@ log_logger_t* log_logger_get(const char* name) {
 }
 
 void log_free(void) {
-	/* iterate over all loggers in the global_lmap */
-	/* for (log_logger_t* it = hashmap_begin(global_lmap); */
-			 /* it != hashmap_end(global_lmap); */
-			 /* it = hashmap_next(it)) { */
-		/* if (it) */
-			/* free(it); */
-	/* } */
+	hashmap_clear(global_lmap);
+	hashmap_free(global_lmap);
 
 	if (global_fmt)
 		log_free_pattern(global_fmt);
+}
+
+void log_log(log_logger_t* l, const char* c) {
+	log_msg_t* m = malloc(sizeof(log_msg_t));
+
+	m->message = c;
+	m->lname = l->name;
+	m->id = hashmap_hash(global_lmap, l->name) + l->counter++;
+	m->priority = l->prio;
+
+	/* tmp */
+	m->func = "main";
+	m->file = "main.c";
+	m->line = 14;
+
+	time_t t;
+	time(&t);
+	m->tinfo = localtime(&t);
+
+	log_format(l->fmt, m);
+	l->rule->rule(m, l->rule->ruleimpl_ptr);
+
+	free(m);
 }

@@ -1,4 +1,4 @@
-/* @TODO clean up login in hashmap_remove */
+/* @TODO clean up logic in hashmap_remove */
 
 #ifndef _HASHMAP_H
 #define _HASHMAP_H
@@ -57,13 +57,13 @@ size_t hashmap_bucket_size(hashmap_t* map, size_t n);
 const char* hashmap_find(hashmap_t* map, void* value);
 
 /* is there an element with that key in the map */
-#define hashmap_exists(map, key) (!hashmap_get(map, key))
+#define hashmap_exists(map, key) (!!hashmap_get(map, key))
 
 /* how many buckets in the map */
 #define hashmap_bucket_count(map) ((map)->size)
 
 /* how many elements in the map */
-#define hashmap_size(map) ((map)->imems)
+#define hashmap_length(map) ((map)->imems)
 
 /* is the hashmap empty */
 #define hashmap_empty(map) (!(map)->imems)
@@ -75,6 +75,6 @@ const char* hashmap_find(hashmap_t* map, void* value);
 #define hashmap_bucket(map, key) hashmap_nbucket(map, hashmap_hash(map, key))
 
 /* load factor is the ratio between bucket count and map size */
-#define hashmap_load_factor(map) ((float)hashmap_size(map) / (float)hashmap_bucket_count(map))
+#define hashmap_load_factor(map) ((float)hashmap_length(map) / (float)hashmap_bucket_count(map))
 
 #endif

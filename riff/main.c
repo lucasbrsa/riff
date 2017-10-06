@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+static char __gbuf[128];
+
 #define tdeclare(name) \
 	const char* name(void)
 
@@ -17,7 +19,13 @@
 	return m
 
 #define tassert(m) \
-	do { if (!(m)) return #m; } while(0)
+	do { if (!(m)) return \
+		snprintf(__gbuf, sizeof(__gbuf), "Assertion failed %s:%u  - %s", \
+		__FILE__, __LINE__, #m), __gbuf; } while(0)
+
+char* __tassert(const char* message, const char* file, unsigned line) {
+	return __gbuf;
+}
 
 #define tassertstreq(a, b) \
 	tassert(strcmp((a), (b)) == 0)
@@ -39,6 +47,10 @@ int main() {
 
 	return 0;
 }
+
+typedef struct {
+	int radius, mass, x, y;
+} vec_example_t;
 
 tdeclare(vector_test) {
 	vector_t* m = vector_init(8, sizeof(char*), NULL);
@@ -93,6 +105,26 @@ tdeclare(vector_test) {
 
 	vector_free(j);
 
+	vector_t* heap_vec = vector_init(32, sizeof(vec_example_t*), free);
+
+	vec_example_t* mexa = malloc(sizeof(vec_example_t));
+	mexa->mass = 12; mexa->radius = 1; mexa->x = 0; mexa->y = 0;
+
+	vec_example_t* mexb = malloc(sizeof(vec_example_t));
+	mexb->mass = 75; mexb->radius = 28; mexb->x = 3; mexa->y = 13;
+
+	vec_example_t* mexc = malloc(sizeof(vec_example_t));
+	mexc->mass = 3; mexc->radius = 1; mexc->x = -32; mexc->y = 5;
+
+	vector_push_back(heap_vec, mexa);
+	vector_push_back(heap_vec, mexb);
+	vector_push_back(heap_vec, mexc);
+
+	tassert((*(vec_example_t**)vector_at(heap_vec, 1))->mass == 75);
+
+	vector_remove(heap_vec, 1);
+	vector_free(heap_vec);
+
 	tsuccess();
 }
 
@@ -102,14 +134,15 @@ void iscool(hashmap_bucket_t* b, void* v) {
 }
 
 tdeclare(hashmap_test) {
-	hashmap_t* hm = hashmap_init(4, NULL);
+	/* realistically a table of length 2 is absurd, but this is to maximize collisions */
+	hashmap_t* hm = hashmap_init(2, NULL);
 
 	tassert(hashmap_empty(hm));
 	hashmap_set(hm, "james", "is a sick cunt");
 	hashmap_set(hm, "john", "is just a cunt");
 	hashmap_set(hm, "james", "is a great bloke");
 	hashmap_remove(hm, "john");
-	tassert(hashmap_size(hm) == 1);
+	tassert(hashmap_length(hm) == 1);
 
 	tassertstreq(hashmap_get(hm, "james"), "is a great bloke");
 	tassert(hashmap_get(hm, "peter") == NULL);
@@ -147,13 +180,22 @@ tdeclare(hashmap_test) {
 }
 
 tdeclare(log_test) {
-	log_logger_t* my_logger = log_logger_init("test logger", NULL);
+	/* rules will be handled later */
+	log_rule_t* r = malloc(sizeof(log_rule_t));
+	r->rule = __handle_rule_stdout;
+	r->ruleimpl_ptr = NULL;
 
-	tassert(my_logger != NULL);
-	tassert(my_logger == log_logger_get("test logger"));
+	log_logger_t* my_logger = log_logger_init("test logger", r);
 
-	log_logger_free(my_logger);
-	// log_free(); <-- not working
+	// tassert(my_logger != NULL);
+	// tassert(my_logger == log_logger_get("test logger"));
+
+	// log_logger_get("test logger");
+
+	log_log(my_logger, "We have liftoff.");
+
+	log_free();
+	free(r);
 
 	tsuccess();
 }
