@@ -69,7 +69,7 @@ const char* hashmap_find(hashmap_t* map, void* value);
 #define hashmap_empty(map) (!(map)->imems)
 
 /* get a pointer to the nth bucket */
-#define hashmap_nbucket(map, n) ((map)->buckets + ((n) * sizeof(hashmap_bucket_t)))
+#define hashmap_nbucket(map, n) (&(map)->buckets[n])
 
 /* get the pointer to the bucket where a key is located */
 #define hashmap_bucket(map, key) hashmap_nbucket(map, hashmap_hash(map, key))

@@ -12,7 +12,7 @@ hashmap_t* hashmap_init(size_t size, hashmap_deleter_t del) {
 		h->del = del;
 		h->imems = 0;
 		h->size = MAX(size, HASHMAP_MINSIZE);
-		h->buckets = calloc(sizeof(hashmap_bucket_t), h->size);
+		h->buckets = calloc(h->size, sizeof(hashmap_bucket_t));
 	}
 
 	return h;
@@ -29,23 +29,7 @@ size_t hashmap_hash(hashmap_t* map, const char* key) {
 }
 
 void hashmap_free(hashmap_t* map) {
-	for (size_t i = 0; i < map->size; i++) {
-		hashmap_bucket_t *b = hashmap_nbucket(map, i)->next, *t;
-
-		while (b) {
-			t = b;
-			b = b->next;
-
-			if (map->del)
-				free(t->value);
-
-			free(t);
-		}
-
-		if (map->del)
-			free(hashmap_nbucket(map, i)->value);
-	}
-
+	hashmap_clear(map);
 	free(map);
 }
 
@@ -77,10 +61,10 @@ bool hashmap_set(hashmap_t* map, const char* key, void* value) {
 		}
 
 		it = malloc(sizeof(hashmap_bucket_t));
-		it->next = head->next;
 		it->key = key;
 		it->value = value;
 
+		it->next = head->next;
 		head->next = it;
 
 	}
@@ -144,7 +128,7 @@ void hashmap_clear(hashmap_t* map) {
 	for (size_t i = 0; i < map->size; i++) {
 		hashmap_bucket_t *b = hashmap_nbucket(map, i), *t;
 
-		if (b->key && map->del)
+		if (b->key && map->del && b->value)
 			free(b->value);
 
 		b = b->next;

@@ -6,24 +6,11 @@
 #include "log.h"
 #include "str.h"
 
+#define FORMATTED_BUFFER_SIZE 256
+
 /* globals */
 static log_fmt_t* global_fmt = NULL;
 static hashmap_t* global_lmap = NULL;
-
-/* implementations of format specifiers:
- *
- * %d default format
- * %f file the log was generated in
- * %F function the log was generated in
- * %i the message number (id)
- * %l line the log was generated on
- * %m the log message
- * %n the logger name
- * %p log priority
- * %P short log priority
- * %t full formatted date time
- * %% percent sign
-*/
 
 void __d(log_msg_t* msg) {
 	static log_fmt_t* f = NULL;
@@ -32,6 +19,7 @@ void __d(log_msg_t* msg) {
 		f = log_compile_pattern("[%n] %m");
 
 	log_format(f, msg);
+	msg->formatted += strlen(msg->formatted);
 }
 
 void __f(log_msg_t* msg) {
@@ -122,7 +110,7 @@ log_fmt_t* log_compile_pattern(const char* fmt) {
 				log_fpair_t* p = malloc(sizeof(log_fpair_t));
 				p->type = LOG_FMT_STRR; p->pool_ptr = left_ptr;
 
-				vector_push_back(f->stack, &p);
+				vector_push_back(f->stack, p);
 				left_ptr = NULL; *itr = 0;
 			}
 
@@ -138,7 +126,7 @@ log_fmt_t* log_compile_pattern(const char* fmt) {
 				log_fpair_t* p = malloc(sizeof(log_fpair_t));
 				p->type = LOG_FMT_CBAK; p->fun = flut[(unsigned)index];
 
-				vector_push_back(f->stack, &p);
+				vector_push_back(f->stack, p);
 			} else
 				break;
 		} else
@@ -160,9 +148,10 @@ void log_free_pattern(log_fmt_t* f) {
 }
 
 void log_format(log_fmt_t* f, log_msg_t* m) {
-	char* beg = m->formatted = malloc(128);
-	for (void* it = vector_front(f->stack); it != vector_back(f->stack); it = vector_next(f->stack, it)) {
-		log_fpair_t tmp = **(log_fpair_t**)(it); /* FIX THIS POINTER NONSENSE */
+	char* beg = m->formatted;
+
+	for (vector_iterator(f->stack, log_fpair_t*, it)) {
+		log_fpair_t tmp = **(log_fpair_t**)(it);
 
 		assert(tmp.type == LOG_FMT_STRR || tmp.type == LOG_FMT_CBAK);
 
@@ -192,7 +181,7 @@ void __handle_rule_null(log_msg_t* msg, void* impl) {
 }
 
 void __handle_rule_stdout(log_msg_t* msg, void* impl) {
-	fputs(msg->formatted, stdout);
+	puts(msg->formatted);
 }
 
 void __handle_rule_stderr(log_msg_t* msg, void* impl) {
@@ -243,7 +232,6 @@ log_logger_t* log_logger_get(const char* name) {
 }
 
 void log_free(void) {
-	hashmap_clear(global_lmap);
 	hashmap_free(global_lmap);
 
 	if (global_fmt)
@@ -255,7 +243,7 @@ void log_log(log_logger_t* l, const char* c) {
 
 	m->message = c;
 	m->lname = l->name;
-	m->id = hashmap_hash(global_lmap, l->name) + l->counter++;
+	//m->id = hashmap_hash(global_lmap, l->name) + l->counter++;
 	m->priority = l->prio;
 
 	/* tmp */
@@ -267,8 +255,10 @@ void log_log(log_logger_t* l, const char* c) {
 	time(&t);
 	m->tinfo = localtime(&t);
 
+	m->formatted = malloc(FORMATTED_BUFFER_SIZE);
 	log_format(l->fmt, m);
 	l->rule->rule(m, l->rule->ruleimpl_ptr);
 
+	free(m->formatted);
 	free(m);
 }

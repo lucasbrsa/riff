@@ -285,7 +285,7 @@ size_t str_cpy(char* dest, const char* src) {
 	do {
 		*dest++ = *s;
 	} while (*s++);
-	return (size_t)(s - src);
+	return (size_t)(s - src - 1);
 }
 
 char* str_dircpy(char* dest, const char* src, ssize_t n, int step) {

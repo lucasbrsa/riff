@@ -40,7 +40,7 @@ tdeclare(log_test);
 tdeclare(str_test);
 
 int main() {
-	test(vector_test);
+	// test(vector_test);
 	test(hashmap_test);
 	test(log_test);
 	test(str_test);
@@ -176,10 +176,28 @@ tdeclare(hashmap_test) {
 
 	hashmap_free(hm);
 
+	hashmap_t* memhm = hashmap_init(8, free);
+
+	int* ayy = malloc(sizeof(int));
+	int* bae = malloc(sizeof(int));
+
+	*ayy = 69;
+	*bae = 420;
+
+	hashmap_set(memhm, "ayy", ayy);
+	hashmap_set(memhm, "bae", bae);
+
+	*bae = 720;
+
+	tassert(*(int*)hashmap_get(memhm, "bae") == 720);
+
+	hashmap_free(memhm);
+
 	tsuccess();
 }
 
 tdeclare(log_test) {
+
 	/* rules will be handled later */
 	log_rule_t* r = malloc(sizeof(log_rule_t));
 	r->rule = __handle_rule_stdout;
@@ -187,10 +205,10 @@ tdeclare(log_test) {
 
 	log_logger_t* my_logger = log_logger_init("test logger", r);
 
-	// tassert(my_logger != NULL);
-	// tassert(my_logger == log_logger_get("test logger"));
+	/* tassert(my_logger); */
+	/* tassert(my_logger == log_logger_get("test logger")); */
 
-	// log_logger_get("test logger");
+	/* log_logger_get("test logger"); */
 
 	log_log(my_logger, "We have liftoff.");
 

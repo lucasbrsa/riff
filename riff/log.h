@@ -42,7 +42,19 @@ typedef struct {
 	vector_t* stack;
 } log_fmt_t;
 
-/* implement the format */
+/* implement the format - need allocated m->formatted
+ *
+ * %d default format
+ * %f file the log was generated in
+ * %F function the log was generated in
+ * %i the message number (id)
+ * %l line the log was generated on
+ * %m the log message
+ * %n the logger name
+ * %p log priority
+ * %P short log priority
+ * %t full formatted date time
+ * %% percent sign */
 void log_format(log_fmt_t* f, log_msg_t* m);
 
 /* generate a format stack from a format string */
