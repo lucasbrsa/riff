@@ -127,11 +127,11 @@ typedef signed long ssize_t;
 #	endif
 #endif
 
-#ifdef OS_WINDOWS
-#	define __func__ __FUNCTION__
+#ifdef __func__
+#	define __FUNCTION__ __func__
 #endif
-#ifndef __func__
-#	define __func__ "<anonymous>"
+#ifndef __FUNCTION__
+#	define __FUNCTION__ "<anonymous>"
 #endif
 
 #ifndef va_copy

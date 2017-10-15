@@ -5,6 +5,9 @@
 # Wait till the project increases in size
 [Dd]ocs/
 
+# ctags gen
+tags
+
 # User-specific files
 *.suo
 *.user

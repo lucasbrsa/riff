@@ -203,14 +203,15 @@ tdeclare(log_test) {
 	r->rule = __handle_rule_stdout;
 	r->ruleimpl_ptr = NULL;
 
-	log_logger_t* my_logger = log_logger_init("test logger", r);
+	log_pattern_set("[%t] [%n] [%F:%f:%l] %i %m");
+	logger_t* my_logger = logger_init("test logger", r);
 
-	/* tassert(my_logger); */
-	/* tassert(my_logger == log_logger_get("test logger")); */
+	tassert(my_logger);
+	tassert(my_logger == logger_get("test logger"));
 
-	/* log_logger_get("test logger"); */
-
-	log_log(my_logger, "We have liftoff.");
+	llog(my_logger, "We have liftoff.");
+	llog(my_logger, "One small step for logging");
+	llog(my_logger, "One giant leap for loggingkind");
 
 	log_free();
 	free(r);

@@ -7,20 +7,12 @@
 #include "str.h"
 
 #define FORMATTED_BUFFER_SIZE 256
+#define ASSUMED_FORMAT_CPAD 64
+#define DEFAULT_PATTERN "[%n] %m"
 
 /* globals */
 static log_fmt_t* global_fmt = NULL;
 static hashmap_t* global_lmap = NULL;
-
-void __d(log_msg_t* msg) {
-	static log_fmt_t* f = NULL;
-
-	if (!f)
-		f = log_compile_pattern("[%n] %m");
-
-	log_format(f, msg);
-	msg->formatted += strlen(msg->formatted);
-}
 
 void __f(log_msg_t* msg) {
 	msg->formatted += str_cpy(msg->formatted, msg->file);
@@ -83,7 +75,7 @@ void __percent (log_msg_t* msg) {
 	*msg->formatted++ = '%';
 }
 
-log_fmt_t* log_compile_pattern(const char* fmt) {
+log_fmt_t* log_pattern_compile(const char* fmt) {
 
 	static log_fmod_f flut[26 * 2 + 1] = {
 		/* uppercase */
@@ -91,7 +83,7 @@ log_fmt_t* log_compile_pattern(const char* fmt) {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 		/* lowercase */
-		0, 0, 0, __d, 0, __f, 0, 0, __i, 0, 0, __l, __m,
+		0, 0, 0, 0, 0, __f, 0, 0, __i, 0, 0, __l, __m,
 		__n, 0, __p, 0, 0, __s, __t, 0, 0, 0, 0, 0, 0,
 
 		/* %% */
@@ -137,7 +129,7 @@ log_fmt_t* log_compile_pattern(const char* fmt) {
 	return f;
 }
 
-void log_free_pattern(log_fmt_t* f) {
+void log_pattern_free(log_fmt_t* f) {
 	if (f) {
 		vector_free(f->stack);
 		free(f->pool);
@@ -147,13 +139,21 @@ void log_free_pattern(log_fmt_t* f) {
 	f = NULL;
 }
 
-void log_format(log_fmt_t* f, log_msg_t* m) {
+void log_pattern_apply(log_fmt_t* f, log_msg_t* m) {
+	size_t buf_size = FORMATTED_BUFFER_SIZE, diff;
 	char* beg = m->formatted;
 
 	for (vector_iterator(f->stack, log_fpair_t*, it)) {
 		log_fpair_t tmp = **(log_fpair_t**)(it);
 
 		assert(tmp.type == LOG_FMT_STRR || tmp.type == LOG_FMT_CBAK);
+
+		diff = (size_t)m->formatted - (size_t)beg;
+		if (diff + ASSUMED_FORMAT_CPAD >= buf_size) {
+			buf_size += MAX(buf_size, ASSUMED_FORMAT_CPAD);
+			beg = realloc(beg, buf_size);
+			m->formatted = beg + diff;
+		}
 
 		if (tmp.type == LOG_FMT_CBAK)
 			tmp.fun(m);
@@ -165,13 +165,13 @@ void log_format(log_fmt_t* f, log_msg_t* m) {
 	m->formatted = beg;
 }
 
-void log_set_pattern(const char* p) {
-	global_fmt = log_compile_pattern(p);
+void log_pattern_set(const char* p) {
+	global_fmt = log_pattern_compile(p);
 }
 
-log_fmt_t* log_get_pattern(void) {
+log_fmt_t* log_pattern_get(void) {
 	if (!global_fmt)
-		global_fmt = log_compile_pattern("%d");
+		global_fmt = log_pattern_compile(DEFAULT_PATTERN);
 
 	return global_fmt;
 }
@@ -202,16 +202,16 @@ void __handle_rule_capped(log_msg_t* msg, void* impl) {
 		fputs(msg->formatted, i.target);
 }
 
-log_logger_t* log_logger_init(const char* name, log_rule_t* r) {
+logger_t* logger_init(const char* name, log_rule_t* r) {
 	if (!global_lmap)
 		global_lmap = hashmap_init(8, free);
 
-	log_logger_t* l = malloc(sizeof(log_logger_t));
+	logger_t* l = malloc(sizeof(logger_t));
 
 	if (!l || !hashmap_set(global_lmap, name, l))
 		return NULL;
 
-	l->fmt = log_get_pattern();
+	l->fmt = log_pattern_get();
 	l->prio = LOG_PRIO_INFO;
 	l->counter = 0;
 	l->name = name;
@@ -220,43 +220,42 @@ log_logger_t* log_logger_init(const char* name, log_rule_t* r) {
 	return l;
 }
 
-void log_logger_free(log_logger_t* l) {
+void logger_free(logger_t* l) {
 	hashmap_remove(global_lmap, l->name);
 }
 
-log_logger_t* log_logger_get(const char* name) {
+logger_t* logger_get(const char* name) {
 	if (!global_lmap)
 		return NULL;
 
-	return (log_logger_t*)hashmap_get(global_lmap, name);
+	return (logger_t*)hashmap_get(global_lmap, name);
 }
 
 void log_free(void) {
 	hashmap_free(global_lmap);
 
 	if (global_fmt)
-		log_free_pattern(global_fmt);
+		log_pattern_free(global_fmt);
 }
 
-void log_log(log_logger_t* l, const char* c) {
+void __llog(logger_t* l, const char* c, const char* function, const char* file, size_t line) {
 	log_msg_t* m = malloc(sizeof(log_msg_t));
 
 	m->message = c;
 	m->lname = l->name;
-	//m->id = hashmap_hash(global_lmap, l->name) + l->counter++;
+	m->id = l->counter++;
 	m->priority = l->prio;
 
-	/* tmp */
-	m->func = "main";
-	m->file = "main.c";
-	m->line = 14;
+	m->func = function;
+	m->file = file;
+	m->line = line;
 
 	time_t t;
 	time(&t);
 	m->tinfo = localtime(&t);
 
 	m->formatted = malloc(FORMATTED_BUFFER_SIZE);
-	log_format(l->fmt, m);
+	log_pattern_apply(l->fmt, m);
 	l->rule->rule(m, l->rule->ruleimpl_ptr);
 
 	free(m->formatted);

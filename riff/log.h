@@ -17,7 +17,7 @@ typedef struct {
 	/* extraneous information used by format specifiers */
 	const char *message, *func, *file, *lname;
 	struct tm* tinfo;
-	unsigned line, id, priority;
+	size_t line, id, priority;
 } log_msg_t;
 
 /* a format speicifer call */
@@ -42,7 +42,7 @@ typedef struct {
 	vector_t* stack;
 } log_fmt_t;
 
-/* implement the format - need allocated m->formatted
+/* implement the format
  *
  * %d default format
  * %f file the log was generated in
@@ -54,20 +54,21 @@ typedef struct {
  * %p log priority
  * %P short log priority
  * %t full formatted date time
- * %% percent sign */
-void log_format(log_fmt_t* f, log_msg_t* m);
+ * %% percent sign
+*/
+void log_pattern_apply(log_fmt_t* f, log_msg_t* m);
 
 /* generate a format stack from a format string */
-log_fmt_t* log_compile_pattern(const char* fmt);
+log_fmt_t* log_pattern_compile(const char* fmt);
 
 /* deallocate the format stack */
-void log_free_pattern(log_fmt_t* f);
+void log_pattern_free(log_fmt_t* f);
 
 /* set the global pattern used by all NEW loggers */
-void log_set_pattern(const char* p);
+void log_pattern_set(const char* p);
 
 /* get the global pattern affecing all NEW loggers */
-log_fmt_t* log_get_pattern(void);
+log_fmt_t* log_pattern_get(void);
 
 /* the final stage after implementing formatting: how to output the message */
 typedef struct {
@@ -108,47 +109,50 @@ typedef struct {
 
 	unsigned prio;
 	size_t counter;
-} log_logger_t;
+} logger_t;
 
 /* will be wrapped around w/ macros to define each rule */
-log_logger_t* log_logger_init(const char* name, log_rule_t* r);
+logger_t* logger_init(const char* name, log_rule_t* r);
 
 /* get a logger or NULL from the global table */
-log_logger_t* log_logger_get(const char* name);
+logger_t* logger_get(const char* name);
 
 /* dealloc a logger and remove it from the global table */
-void log_logger_free(log_logger_t* l);
+void logger_free(logger_t* l);
 
 /* finally, destroy all globals and unfreed instances */
 void log_free(void);
 
 /* go through all the stages of logging */
-void log_log(log_logger_t* l, const char* c);
+void __llog(logger_t* l, const char* c, const char* function, const char* file, size_t line);
 
 /* logger getter/setters */
 
-#define log_logger_get_pattern(l) \
+#define logger_get_pattern(l) \
 	(l->fmt)
 
-#define log_logger_get_name(l) \
+#define logger_get_name(l) \
 	((l)->name)
 
-#define log_logger_get_priority(l, p) \
+#define logger_get_priority(l, p) \
 	((l)->prio)
 
-#define log_logger_canlog(l, p) \
+#define logger_canlog(l, p) \
 	((l)->prio <= (p))
 
-#define log_logger_set_priority(l, p) \
+#define logger_set_priority(l, p) \
 	do { (l)->prio = (p); } while(0)
 
-#define log_logger_set_pattern(l, p) \
+#define logger_set_pattern(l, p) \
 	do { l->fmt = log_compile_pattern(p); } while(0)
 
 /* logger generators for rules*/
 /* ... */
 
-/* macros that wrap around log for:
+/* macros that wrap around log */
+#define llog(logger, message) __llog(logger, message, __func__, __FILE__, __LINE__);
+
+/* ie.
 trace
 debug
 info
