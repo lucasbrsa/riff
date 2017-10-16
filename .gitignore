@@ -5,6 +5,9 @@
 # Wait till the project increases in size
 [Dd]ocs/
 
+*.vcxproj
+*.vcxproj.filters
+
 # ctags gen
 tags
 
