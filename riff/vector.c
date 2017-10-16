@@ -28,7 +28,7 @@ void vector_call_deletere(vector_t* v, size_t e) {
 }
 
 void vector_call_deletera(vector_t* v) {
-	for (void* b = vector_front(v); b != vector_back(v); b = vector_next(v, b))
+	for (vector_iterator(v, void, b))
 		(*v->deleter)(*(void**)b);
 }
 

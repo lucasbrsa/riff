@@ -9,6 +9,7 @@
 #include <time.h>
 
 /* all logs are converted into a log_msg_t to be formatted */
+/* consider NOT duplicating data from the logger */
 typedef struct {
 	/* where the final formatted message is written to */
 	char* formatted;
@@ -41,7 +42,19 @@ typedef struct {
 	vector_t* stack;
 } log_fmt_t;
 
-/* delete soom */
+/* implement the format - need allocated m->formatted
+ *
+ * %d default format
+ * %f file the log was generated in
+ * %F function the log was generated in
+ * %i the message number (id)
+ * %l line the log was generated on
+ * %m the log message
+ * %n the logger name
+ * %p log priority
+ * %P short log priority
+ * %t full formatted date time
+ * %% percent sign */
 void log_format(log_fmt_t* f, log_msg_t* m);
 
 /* generate a format stack from a format string */
@@ -64,9 +77,6 @@ typedef struct {
 
 /* list of different log rules */
 /* empty structs redundant, will be used once rule stuff is generalized with macros */
-struct __rule_null { /* nothing */ };
-struct __rule_stdout { /* nothing */ };
-struct __rule_stderr { /* nothing */ };
 struct __rule_basic { FILE* target; };
 struct __rule_capped { FILE* target; size_t lim; };
 
@@ -80,19 +90,21 @@ void __handle_rule_capped(log_msg_t* msg, void* impl);
 /* list of log priorities */
 /* this is mimicked in the lut */
 enum {
-	LOG_PRIO_TRACE=0,
-	LOG_PRIO_DEBUG,
-	LOG_PRIO_INFO,
-	LOG_PRIO_WARN,
+	LOG_PRIO_PANIC=0,
+	LOG_PRIO_ALERT,
+	LOG_PRIO_CRIT,
 	LOG_PRIO_ERROR,
-	LOG_PRIO_CRIT
+	LOG_PRIO_WARN,
+	LOG_PRIO_NOTICE,
+	LOG_PRIO_INFO,
+	LOG_PRIO_DEBUG
 };
 
 /* object that describes all loggers */
 typedef struct {
 	const char* name;
 	log_fmt_t* fmt;
-	log_rule_t* rule; /* could potentially store a vector of rules */
+	log_rule_t* rule;
 
 	unsigned prio;
 	size_t counter;
@@ -110,6 +122,9 @@ void log_logger_free(log_logger_t* l);
 /* finally, destroy all globals and unfreed instances */
 void log_free(void);
 
+/* go through all the stages of logging */
+void log_log(log_logger_t* l, const char* c);
+
 /* logger getter/setters */
 
 #define log_logger_get_pattern(l) \
@@ -122,7 +137,7 @@ void log_free(void);
 	((l)->prio)
 
 #define log_logger_canlog(l, p) \
-	((l)->prio >= (p))
+	((l)->prio <= (p))
 
 #define log_logger_set_priority(l, p) \
 	do { (l)->prio = (p); } while(0)

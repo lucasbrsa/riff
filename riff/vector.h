@@ -26,7 +26,8 @@ typedef struct {
 	vector_del_f* deleter;
 } vector_t;
 
-/* create a vector, initializing with start_len; deleter defines the function to call on deletion or NULL */
+/* create a vector, initializing with start_len and the sizeof esach element */
+/* deleter defines the function to call on deletion or NULL */
 vector_t* vector_init(size_t start_len, size_t element_size, vector_del_f* deleter);
 
 /* create a new vector, copying another into it */
@@ -83,8 +84,8 @@ bool vector_eq(vector_t* v1, vector_t* v2);
 	(void*)((v)->data + ((i) * (v)->blksz))
 
 /* get, and dereference, the data stored at index in the vector */
-#define vector_att(v, i, t) \
-	*(t*)((v)->data + ((i) * (v)->blksz))
+#define vector_att(v, i, type) \
+	(*(type*)((v)->data + ((i) * (v)->blksz)))
 
 /* iterators, done via pointer comparison */
 
@@ -107,6 +108,9 @@ bool vector_eq(vector_t* v1, vector_t* v2);
 /* is the vector empty? */
 #define vector_empty(v) \
 	(!(v)->size)
+
+/* more intuitive init function */
+#define vector_construct(type) vector_init(0, sizeof(type), NULL)
 
 /* poll data from the structure */
 #define vector_size(v) ((v)->size)
