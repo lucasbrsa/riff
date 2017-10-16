@@ -2,6 +2,7 @@
 #include "hashmap.h"
 #include "log.h"
 #include "str.h"
+#include "os.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -20,7 +21,7 @@ static char __gbuf[128];
 
 #define tassert(m) \
 	do { if (!(m)) return \
-		snprintf(__gbuf, sizeof(__gbuf), "Assertion failed %s:%u  - %s", \
+		snprintf(__gbuf, sizeof(__gbuf), "*Assertion failed %s:%u  - %s", \
 		__FILE__, __LINE__, #m), __gbuf; } while(0)
 
 char* __tassert(const char* message, const char* file, unsigned line) {
@@ -31,19 +32,21 @@ char* __tassert(const char* message, const char* file, unsigned line) {
 	tassert(strcmp((a), (b)) == 0)
 
 #define test(func) \
-	do { printf("running test %s:\n", #func); const char* k = func(); \
-	if (k) printf("failed: %s\n", k); else printf("success\n"); } while(0)
+	do { printf("*running test %s:\n", #func); const char* k = func(); \
+	if (k) printf("*failed: %s\n", k); else printf("*success\n"); } while(0)
 
 tdeclare(vector_test);
 tdeclare(hashmap_test);
 tdeclare(log_test);
 tdeclare(str_test);
+tdeclare(os_test);
 
 int main() {
-	// test(vector_test);
+	test(vector_test);
 	test(hashmap_test);
 	test(log_test);
 	test(str_test);
+	test(os_test);
 
 	return 0;
 }
@@ -317,6 +320,16 @@ tdeclare(str_test) {
 	tassertstreq(c, "nfnf");
 
 	free(buffer);
+
+	tsuccess();
+}
+
+tdeclare(os_test) {
+	OS_SYSCALL("echo \"This was not done with printf\";");
+
+	OS_MKDIR("some_dir");
+	OS_RENAME("some_dir", "my_dir");
+	OS_RMDIR("my_dir");
 
 	tsuccess();
 }

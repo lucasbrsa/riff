@@ -1,13 +1,29 @@
 #ifndef _OS_H
 #define _OS_H
 
-#include <stdio.h>
-#include <stdlib.h> // this is where system() is declared
-#include <string.h>
-#include <malloc.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+/* wrap syscalls */
+#define OS_SYSCALL(args) \
+	((args) && (system((args)) >= 0))
+
+#define OS_GETCWD /**/
+
+#define OS_RENAME(src, dest) rename(src, dest)
+
+#if _WIN32
+#	define OS_MKDIR(dir) _mkdir(dir)
+#	define OS_CHDIR(to) _chdir(dir)
+#	define OS_RMDIR(dir) _rmdir(dir)
+#else
+#	define OS_MKDIR(dir) mkdir(dir, S_IRWXU | S_IRWXG | S_IRWXO)
+#	define OS_CHDIR(to) chdir(to)
+#	define OS_RMDIR(dir) rmdir(dir)
+#endif
 
 /* determine compiler */
 #if defined(__clang__)
@@ -78,77 +94,5 @@
 #else
 #	define OS_UNKNOWN
 #endif
-
-/* modify some keywords to be more cross platform */
-
-/* help allow for CPP compilation */
-#if __STDC_VERSION__ >= 199901L || defined(__cplusplus) || defined(_MSC_VER)
-#	define INLINE inline
-#else
-#	define INLINE /* */
-#endif
-
-#if _WIN64 /* should be a better cross compiler way */
-typedef signed long long ssize_t;
-#else
-typedef signed long ssize_t;
-#endif
-
-/* stdbool and stddef replacment */
-#if 1
-#	ifndef __cplusplus
-#		define bool		_Bool
-#		define false	('-'-'-')
-#		define true		('/'/'/')
-#	endif
-#	ifndef NULL
-#		ifdef __cplusplus
-#			define NULL 0
-#		else
-#			define NULL ((void *)0)
-#		endif
-#	endif
-#endif
-
-#ifdef OS_WINDOWS
-#	define __func__ __FUNCTION__
-#endif
-#ifndef __func__
-#	define __func__ "<anonymous>"
-#endif
-
-#ifndef va_copy
-#	ifdef __va_copy
-#		define va_copy __va_copy
-#	else
-#		define va_copy(d, s) ((d) = (s))
-#	endif
-#endif
-
-/* OS handling functions */
-
-/* run another program/shell command */
-int os_syscall(const char* args);
-
-/* the current directory as a string */
-char* os_getcwd(void);
-
-/* GID function */
-
-/* UID function */
-
-/* should return this information: file/dir name, file/dir name length, file/directory?, read/write access?*/
-/* will require some struct */ void os_listdir(); /* change ret type */ 
-
-int os_makedir(const char* dir);
-
-int os_changedir(const char* to);
-
-/* can also move files */
-int os_rename(char* src, char* dest);
-
-int os_rmdir(char* dir);
-
-uint32_t reverse_uint(uint32_t value);
 
 #endif

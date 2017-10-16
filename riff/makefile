@@ -2,7 +2,7 @@
 
 # compiler and dirs
 CC=clang
-IDIR=.
+IDIR=-I.
 SDIR=.
 ODIR=../build
 BPROC=$(ODIR)/riff
@@ -13,7 +13,7 @@ OBJ := $(addprefix $(ODIR)/,$(notdir $(SRC:.c=.o)))
 
 # flags
 LFLAGS=-lm
-CFLAGS=-std=c99 -g -Wall -I$(IDIR)
+CFLAGS=-std=c99 -g -Wall $(IDIR)
 
 # compile
 $(ODIR)/%.o: $(SDIR)/%.c

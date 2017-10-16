@@ -28,4 +28,41 @@
 /* the floor of a / b */
 #define CEILD(a, b)  (((a) + (b) - 1) / (b))
 
+#if _WIN64 /* should be a better cross compiler way */
+typedef signed long long ssize_t;
+#else
+typedef signed long ssize_t;
+#endif
+
+/* stdbool and stddef replacment */
+#if 1
+#	ifndef __cplusplus
+#		define bool		_Bool
+#		define false	0
+#		define true		1
+#	endif
+#	ifndef NULL
+#		ifdef __cplusplus
+#			define NULL 0
+#		else
+#			define NULL ((void *)0)
+#		endif
+#	endif
+#endif
+
+#ifdef OS_WINDOWS
+#	define __func__ __FUNCTION__
+#endif
+#ifndef __func__
+#	define __func__ "<anonymous>"
+#endif
+
+#ifndef va_copy
+#	ifdef __va_copy
+#		define va_copy __va_copy
+#	else
+#		define va_copy(d, s) ((d) = (s))
+#	endif
+#endif
+
 #endif
