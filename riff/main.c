@@ -200,24 +200,32 @@ tdeclare(hashmap_test) {
 }
 
 tdeclare(log_test) {
+	logger_init_stdout("console");
 
-	/* rules will be handled later */
-	log_rule_t* r = malloc(sizeof(log_rule_t));
-	r->rule = __handle_rule_stdout;
-	r->ruleimpl_ptr = NULL;
+	log_notice("console", "Hello %s", "world");
+	log_notice("console", "I am a logger");
 
-	log_pattern_set("[%t] [%n] [%F:%f:%l] %i %m");
-	logger_t* my_logger = logger_init("test logger", r);
+	log_warn_if("console", 1024/8 == 127, "oh oh something's wrong");
+	log_warn_if("console", 1024/8 == 128, "can confirm math aint broken");
 
-	tassert(my_logger);
-	tassert(my_logger == logger_get("test logger"));
+	log_pattern_set("[%n] [%t] [%p] %m");
 
-	llog(my_logger, "We have liftoff.");
-	llog(my_logger, "One small step for logging");
-	llog(my_logger, "One giant leap for loggingkind");
+	log_crit("console", "Bye bye");
+
+	logger_t* my_err_logger = logger_init_stderr("err");
+
+	logp_panic(my_err_logger, "meme");
+
+	logger_init_coloured("rainbow");
+	log_debug("rainbow", "hello");
+	log_info("rainbow", "hello");
+	log_notice("rainbow", "hello");
+	log_warn("rainbow", "hello");
+	log_error("rainbow", "hello");
+	log_crit("rainbow", "hello");
+	log_panic("rainbow", "hello");
 
 	log_free();
-	free(r);
 
 	tsuccess();
 }
