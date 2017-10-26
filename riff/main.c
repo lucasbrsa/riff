@@ -1,3 +1,5 @@
+#define LOG_LEVEL 3
+
 #include "vector.h"
 #include "hashmap.h"
 #include "log.h"
@@ -200,33 +202,38 @@ tdeclare(hashmap_test) {
 }
 
 tdeclare(log_test) {
-	logger_init_stdout("console");
+	log_logger_t* console = log_logger("console", log_writer_stdout());
 
-	log_notice("console", "Hello %s", "world");
-	log_notice("console", "I am a logger");
+	log_notice(console, "Hello %s", "world!");
+	log_notice(console, "I am a simple stdout logger");
 
-	log_warn_if("console", 1024/8 == 127, "oh oh something's wrong");
-	log_warn_if("console", 1024/8 == 128, "can confirm math aint broken");
+	log_warn_if(1 == 0, console, "Oh no...");
+	log_info(log_logger_get("console"), "You can find a logger by name.");
 
-	log_pattern_set("[%n] [%t] [%p] %m");
+	log_panic(console, "I'm suiciding now...");
+	log_logger_free(console);
 
-	log_crit("console", "Bye bye");
 
-	logger_t* my_err_logger = logger_init_stderr("err");
+	log_logger_t* rainbow = log_logger("rainbow", log_writer_stdout_coloured());
 
-	logp_panic(my_err_logger, "meme");
+	log_fmt_set("[%t] [%n] [%p] %m");
 
-	logger_init_coloured("rainbow");
-	log_debug("rainbow", "hello");
-	log_info("rainbow", "hello");
-	log_notice("rainbow", "hello");
-	log_warn("rainbow", "hello");
-	log_error("rainbow", "hello");
-	log_crit("rainbow", "hello");
-	log_panic("rainbow", "hello");
+	log_debug(rainbow, "hello");
+	log_info(rainbow, "hello");
+	log_notice(rainbow, "hello");
+	log_warn(rainbow, "hello");
+	log_error(rainbow, "hello");
+	log_panic(rainbow, "hello");
+
+	log_logger_t* syslogger = log_logger("syslogger", log_writer_syslog(0));
+	log_notice(syslogger, "This was written through %s", "log.h");
+
+
+	LOG_DEBUG(rainbow, "This line of code never ran...");
+	LOG_INFO(rainbow, "This line of code never ran...");
+	LOG_NOTICE(rainbow, "This line of code ran...");
 
 	log_free();
-
 	tsuccess();
 }
 
@@ -235,6 +242,10 @@ bool apply_filter(char c) {
 }
 
 tdeclare(str_test) {
+	char* mem = str_sprintf("I am a %s, who is %d years old.", "god", 15);
+	tassertstreq("I am a god, who is 15 years old.", mem);
+	free(mem);
+
 	char* buffer = malloc(256);
 	tassertstreq("-1238948", str_its(-1238948, buffer));
 

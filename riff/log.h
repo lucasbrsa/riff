@@ -1,80 +1,54 @@
+/* @TODO syslog openlog calls */
+
 #ifndef _LOG_H
 #define _LOG_H
 
 #include "vector.h"
 #include "generic.h"
+#include "os.h"
 
-#include <string.h>
-#include <stdio.h>
 #include <time.h>
+#include <stdarg.h>
 
-/* all logs are converted into a log_msg_t to be formatted */
-/* consider NOT duplicating data from the logger */
+#define LOG_DEFAULT_TIME_FMT "%Y-%m-%d %H:%M:%S"
+#define LOG_DEFAULT_PRIO LOG_PRIO_DEBUG
+#define LOG_DEFAULT_MIN_PRIO LOG_PRIO_DEBUG
+#define LOG_DEFAULT_FMT_BUFFER_SIZE 256
+#define LOG_DEFAULT_FMT "[%n] %m"
+#define LOG_DEFAULT_FMT_PAD 64
+
+#ifdef OS_LINUX
+#define LOG_SYSLOG
+#endif
+
+/* every message contains this data, minimum */
 typedef struct {
-	/* where the final formatted message is written to */
+	/* this is the output buffer of the formatter */
 	char* formatted;
 
-	/* extraneous information used by format specifiers */
 	const char *message, *func, *file, *lname;
 	struct tm* tinfo;
 	size_t line, id, priority;
 } log_msg_t;
 
-/* a format speicifer call */
-typedef void (*log_fmod_f)(log_msg_t* msg);
-
-/* an instance on the fmt stack is one of two type */
-typedef struct {
-	enum {
-		LOG_FMT_STRR=0,
-		LOG_FMT_CBAK=1,
-	} type;
-
-	union {
-		char* pool_ptr;
-		log_fmod_f fun;
-	};
-} log_fpair_t;
-
-/* wrap around a vector of log_fpair_t and store a safe copy of the fmt */
+/* a compiled format is represented by a stack of pairs */
 typedef struct {
 	char* pool;
 	vector_t* stack;
 } log_fmt_t;
 
-/* implement the format
- *
- * %d default format
- * %f file the log was generated in
- * %F function the log was generated in
- * %i the message number (id)
- * %l line the log was generated on
- * %m the log message
- * %n the logger name
- * %p log priority
- * %P short log priority
- * %t full formatted date time
- * %% percent sign
-*/
-void log_pattern_apply(log_fmt_t* f, log_msg_t* m);
+/* format a message */
+void log_fmt(log_fmt_t* f, log_msg_t* m);
 
-/* generate a format stack from a format string */
-log_fmt_t* log_pattern_compile(const char* fmt);
+/* compile a forat string into a fmt, NULL on failure */
+log_fmt_t* log_fmt_compile(const char* pattern);
 
-/* deallocate the format stack */
-void log_pattern_free(log_fmt_t* f);
-
-/* set the global pattern used by all loggers */
-void log_pattern_set(const char* p);
-
-/* get the global pattern affecing all NEW loggers */
-log_fmt_t* log_pattern_get(void);
+/* deallocate the compiled format stack */
+void log_fmt_free(log_fmt_t* f);
 
 /* list of log priorities */
-/* this is mimicked in the lut */
 enum {
 	LOG_PRIO_PANIC=0,
-	LOG_PRIO_CRIT,
 	LOG_PRIO_ERROR,
 	LOG_PRIO_WARN,
 	LOG_PRIO_NOTICE,
@@ -82,159 +56,182 @@ enum {
 	LOG_PRIO_DEBUG
 };
 
-/* object that describes all loggers */
+/* a log writer is what determines the output of a formatted message */
+typedef struct {
+	void (*writer)(log_msg_t* msg, void* impl);
+	void* writer_ptr; /* cast it to any writer, polymorphism */
+} log_writer_t;
+
+/* all the data used by a logger object */
 typedef struct {
 	const char* name;
-	log_fmt_t* fmt;
-	void (*rule)(log_msg_t* msg, void* impl);
-	void* ruleimpl_ptr; /* cast it to any rule, kinda polymorphism */
-
 	unsigned prio;
 	size_t counter;
-} logger_t;
 
-/* will be wrapped around w/ macros to define each rule */
-logger_t* logger_init_custom(
-		const char* name,
-		log_fmt_t* fmt,
-		unsigned prio,
-		void (*rule)(log_msg_t* msg, void* impl),
-		void* impptr);
+	log_fmt_t* fmt;
+	log_writer_t writer;
+} log_logger_t;
 
-logger_t* logger_init_null(const char* name);
-logger_t* logger_init_stdout(const char* name);
-logger_t* logger_init_stderr(const char* name);
-logger_t* logger_init_coloured(const char* name);
-logger_t* logger_init_basic(const char* name, FILE* target);
-logger_t* logger_init_capped(const char* name, FILE* target, size_t lim);
-
-/* get a logger or NULL from the global table */
-logger_t* logger_get(const char* name);
+/* create a new logger instance from a custom writer */
+log_logger_t* log_logger_custom(const char* name, log_fmt_t* fmt, log_writer_t writer);
 
 /* dealloc a logger and remove it from the global table */
-void logger_free(logger_t* l);
+void log_logger_free(log_logger_t* l);
+
+/* create a logger */
+#define log_logger(name, writer) log_logger_custom(name, NULL, writer)
+
+/* all the default writers */
+
+/* do nothiing with the output */
+log_writer_t log_writer_null(void);
+
+/* write to stdout */
+log_writer_t log_writer_stdout(void);
+
+/* write to stderr */
+log_writer_t log_writer_stderr(void);
+
+/* write to stdout, colour is determined by prio */
+log_writer_t log_writer_stdout_coloured(void);
+
+/* write to stderr, colour is determined by prio */
+log_writer_t log_writer_stderr_coloured(void);
+
+/* write to a file */
+log_writer_t log_writer_file(const char* path);
+
+/* write to a file with a byte limit */
+log_writer_t log_writer_capped(const char* path, size_t lim);
+
+/* rotate to new file when limit is reached */
+/* @TODO */
+
+/* linux syslog, will ignore formatting... */
+log_writer_t log_writer_syslog(int option);
 
 /* finally, destroy all globals and unfreed instances */
 void log_free(void);
 
-/* go through all the stages of logging */
-void __log(logger_t* l,
+/* execute the logging pipeline, logger -> formatter -> writer */
+void log_wrapper(log_logger_t* l,
 		const char* function,
 		const char* file,
 		size_t line,
 		unsigned level,
 		const char* fmt, ...);
 
-/* logger getter/setters */
+/* the global getters and setters */
 
-#define logger_get_pattern(l) \
-	(l->fmt)
+/* set the global pattern used by all non-custom fmt loggers */
+void log_fmt_set(const char* p);
 
-#define logger_get_name(l) \
-	((l)->name)
+/* get the global pattern affecing all non-custom fmt loggers */
+log_fmt_t* log_fmt_get(void);
 
-#define logger_get_priority(l, p) \
-	((l)->prio)
+/* get a logger or NULL from the global table */
+log_logger_t* log_logger_get(const char* name);
 
-#define logger_canlog(l, p) \
-	((l)->prio <= (p))
+/* set the global log level */
+void log_priority_set(unsigned p);
 
-#define logger_set_priority(l, p) \
-	do { (l)->prio = (p); } while(0)
+/* get the global log level */
+unsigned log_priority_get(void);
 
-#define logger_set_pattern(l, p) \
-	do { l->fmt = log_compile_pattern(p); } while(0)
+/* logger funcs */
 
-/* logger generators for rules*/
-#define logp(logger_name, prio, fmt, args...) \
-	__log(logger_name, __func__, __FILE__, __LINE__, prio, fmt, ##args)
+#define log_log(logger, prio, fmt, args...) \
+	log_wrapper(logger, __func__, __FILE__, __LINE__, prio, fmt, ##args)
 
-#define logp_panic(logger_val, fmt, args...) \
-	logp(logger_val, LOG_PRIO_PANIC, fmt, ##args)
+#define log_panic(logger, fmt, args...) log_log(logger, LOG_PRIO_PANIC, fmt, ##args)
 
-#define logp_crit(logger_val, fmt, args...) \
-	logp(logger_val, LOG_PRIO_CRIT, fmt, ##args)
+#define log_error(logger, fmt, args...) log_log(logger, LOG_PRIO_ERROR, fmt, ##args)
 
-#define logp_error(logger_val, fmt, args...) \
-	logp(logger_val, LOG_PRIO_ERROR, fmt, ##args)
+#define log_warn(logger, fmt, args...) log_log(logger, LOG_PRIO_WARN, fmt, ##args)
 
-#define logp_warn(logger_val, fmt, args...) \
-	logp(logger_val, LOG_PRIO_WARN, fmt, ##args)
+#define log_notice(logger, fmt, args...) log_log(logger, LOG_PRIO_NOTICE, fmt, ##args)
 
-#define logp_notice(logger_val, fmt, args...) \
-	logp(logger_val, LOG_PRIO_NOTICE, fmt, ##args)
+#define log_info(logger, fmt, args...) log_log(logger, LOG_PRIO_INFO, fmt, ##args)
 
-#define logp_info(logger_val, fmt, args...) \
-	logp(logger_val, LOG_PRIO_INFO, fmt, ##args)
+#define log_debug(logger, fmt, args...) log_log(logger, LOG_PRIO_DEBUG, fmt, ##args)
 
-#define logp_debug(logger_val, fmt, args...) \
-	logp(logger_val, LOG_PRIO_DEBUG, fmt, ##args)
+#define log_panic_if(t, logger, fmt, args...) \
+	do { if (t) log_log(logger, LOG_PRIO_PANIC, fmt, ##args); } while(0)
 
-#define logp_panic_if(logger_val, expression, fmt, args...) \
-	do { if (expression) logp_panic(logger_val, fmt, ##args); } while(0)
+#define log_error_if(t, logger, fmt, args...) \
+	do { if (t) log_log(logger, LOG_PRIO_ERROR, fmt, ##args); } while(0)
 
-#define logp_crit_if(logger_val, expression, fmt, args...) \
-	do { if (expression) logp_crit(logger_val, fmt, ##args); } while(0)
+#define log_warn_if(t, logger, fmt, args...) \
+	do { if (t) log_log(logger, LOG_PRIO_WARN, fmt, ##args); } while(0)
 
-#define logp_error_if(logger_val, expression, fmt, args...) \
-	do { if (expression) logp_error(logger_val, fmt, ##args); } while(0)
+#define log_notice_if(t, logger, fmt, args...) \
+	do { if (t) log_log(logger, LOG_PRIO_NOTICE, fmt, ##args); } while(0)
 
-#define logp_warn_if(logger_val, expression, fmt, args...) \
-	do { if (expression) logp_warn(logger_val, fmt, ##args); } while(0)
+#define log_info_if(t, logger, fmt, args...) \
+	do { if (t) log_log(logger, LOG_PRIO_INFO, fmt, ##args); } while(0)
 
-#define logp_notice_if(logger_val, expression, fmt, args...) \
-	do { if (expression) logp_notice(logger_val, fmt, ##args); } while(0)
+#define log_debug_if(t, logger, fmt, args...) \
+	do { if (t) log_log(logger, LOG_PRIO_DEBUG, fmt, ##args); } while(0)
 
-#define logp_info_if(logger_val, expression, fmt, args...) \
-	do { if (expression) logp_info(logger_val, fmt, ##args); } while(0)
+/* structure queries */
 
-#define logp_debug_if(logger_val, expression, fmt, args...) \
-	do { if (expression) logp_debug(logger_val, fmt, ##args); } while(0)
+#define log_logger_pattern_get(l) (l->fmt)
 
-/* would like to call 'log' but conflicts with <math.h> log */
-#define logl(logger_name, prio, fmt, args...) \
-	__log(logger_get(logger_name), __func__, __FILE__, __LINE__, prio, fmt, ##args)
+#define log_logger_name_get(l) ((l)->name)
 
-#define log_panic(logger_name, fmt, args...) \
-	logl(logger_name, LOG_PRIO_PANIC, fmt, ##args)
+#define log_logger_priority_get(l) ((l)->prio)
 
-#define log_crit(logger_name, fmt, args...) \
-	logl(logger_name, LOG_PRIO_CRIT, fmt, ##args)
+#define log_logger_writer_get(l) ((l)->writer)
 
-#define log_error(logger_name, fmt, args...) \
-	logl(logger_name, LOG_PRIO_ERROR, fmt, ##args)
+#define log_logger_counter_get(l) ((l)->counter)
 
-#define log_warn(logger_name, fmt, args...) \
-	logl(logger_name, LOG_PRIO_WARN, fmt, ##args)
+#define log_logger_canlog(l, p) ((l)->prio >= (p) && (l)->prio >= log_get_priority())
 
-#define log_notice(logger_name, fmt, args...) \
-	logl(logger_name, LOG_PRIO_NOTICE, fmt, ##args)
+#define log_logger_priority_set(l, p) do { (l)->prio = (p); } while(0)
 
-#define log_info(logger_name, fmt, args...) \
-	logl(logger_name, LOG_PRIO_INFO, fmt, ##args)
+#define log_logger_pattern_set(l, p) \
+	do { if (l->fmt) { log_fmt_free(l->fmt) } l->fmt = log_compile_pattern(p); } while(0)
 
-#define log_debug(logger_name, fmt, args...) \
-	logl(logger_name, LOG_PRIO_DEBUG, fmt, ##args)
+/* compile time priorities */
 
-#define log_panic_if(logger_name, expression, fmt, args...) \
-	do { if (expression) log_panic(logger_name, fmt, ##args); } while(0)
+#ifndef LOG_LEVEL
+#define LOG_LEVEL 5
+#endif
 
-#define log_crit_if(logger_name, expression, fmt, args...) \
-	do { if (expression) log_crit(logger_name, fmt, ##args); } while(0)
+#if LOG_LEVEL >= 0
+#define LOG_PANIC(logger, fmt, args...) log_log(logger, LOG_PRIO_PANIC, fmt, ##args)
+#else
+#define LOG_PANIC(logger, fmt, args...) /**/
+#endif
 
-#define log_error_if(logger_name, expression, fmt, args...) \
-	do { if (expression) log_error(logger_name, fmt, ##args); } while(0)
+#if LOG_LEVEL >= 1
+#define LOG_ERROR(logger, fmt, args...) log_log(logger, LOG_PRIO_ERROR, fmt, ##args)
+#else
+#define LOG_ERROR(logger, fmt, args...) /**/
+#endif
 
-#define log_warn_if(logger_name, expression, fmt, args...) \
-	do { if (expression) log_warn(logger_name, fmt, ##args); } while(0)
+#if LOG_LEVEL >= 2
+#define LOG_WARN(logger, fmt, args...) log_log(logger, LOG_PRIO_WARN, fmt, ##args)
+#else
+#define LOG_WARN(logger, fmt, args...) /**/
+#endif
 
-#define log_notice_if(logger_name, expression, fmt, args...) \
-	do { if (expression) log_notice(logger_name, fmt, ##args); } while(0)
+#if LOG_LEVEL >= 3
+#define LOG_NOTICE(logger, fmt, args...) log_log(logger, LOG_PRIO_NOTICE, fmt, ##args)
+#else
+#define LOG_NOTICE(logger, fmt, args...) /**/
+#endif
 
-#define log_info_if(logger_name, expression, fmt, args...) \
-	do { if (expression) log_info(logger_name, fmt, ##args); } while(0)
+#if LOG_LEVEL >= 4
+#define LOG_INFO(logger, fmt, args...) log_log(logger, LOG_PRIO_INFO, fmt, ##args)
+#else
+#define LOG_INFO(logger, fmt, args...) /**/
+#endif
 
-#define log_debug_if(logger_name, expression, fmt, args...) \
-	do { if (expression) log_debug(logger_name, fmt, ##args); } while(0)
+#if LOG_LEVEL >= 5
+#define LOG_DEBUG(logger, fmt, args...) log_log(logger, LOG_PRIO_DEBUG, fmt, ##args)
+#else
+#define LOG_DEBUG(logger, fmt, args...) /**/
+#endif
 
 #endif // _LOG_H

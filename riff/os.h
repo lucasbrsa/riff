@@ -60,6 +60,9 @@
 #	endif
 #endif
 
+#ifdef linux
+#	define OS_LINUX
+#endif
 #ifdef _WIN32
 #	define OS_WINDOWS
 #	ifdef _WIN64

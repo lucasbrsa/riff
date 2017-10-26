@@ -4,7 +4,6 @@
 #include <stdio.h> /* can be removed once int2hex() is implemented */
 #include <malloc.h>
 #include <string.h>
-#include <stdarg.h>
 
 /* must use exclusively:
  * malloc
@@ -12,7 +11,35 @@
  * strlen
  * memcpy
  * memmove
+ * vsnprintf
  */
+
+char* str_vsprintf(const char* fmt, va_list ap) {
+	va_list bp;
+	va_copy(bp, ap);
+
+	if (fmt == NULL)
+		return NULL;
+
+	size_t len = vsnprintf(NULL, 0, fmt, ap) + 1;
+	char* buffer = malloc(len);
+	vsnprintf(buffer, len, fmt, bp);
+
+	va_end(bp);
+
+	return buffer;
+}
+
+char* str_sprintf(const char* fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+
+	char* buffer = str_vsprintf(fmt, ap);
+
+	va_end(ap);
+
+	return buffer;
+}
 
 char* str_uits(uint64_t u, char buf[__UI64_MAXS]) {
 	static const char dpair_lut[] =

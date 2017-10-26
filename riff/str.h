@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <string.h>
 #include <float.h>
+#include <stdarg.h>
 
 #define __STR(x) #x
 
@@ -15,6 +16,12 @@
 #define __UI64_MAXS (10*sizeof(uint64_t)*CHAR_BIT/33+2)
 
 #define __PTR_MAXS (sizeof(__STR(SIZE_MAX))+1)
+
+/* like vsprintf but realloc and allocs the buffer, make sure to free */
+char* str_vsprintf(const char* fmt, va_list ap);
+
+/* like sprintf but realloc and allocs the buffer, make sure to free */
+char* str_sprintf(const char* fmt, ...);
 
 /* type conversion: signed int64_t to string */
 char* str_its(int64_t s, char buf[__SI64_MAXS]);
