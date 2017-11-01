@@ -234,6 +234,14 @@ tdeclare(log_test) {
 	LOG_NOTICE(rainbow, "This line of code ran...");
 
 	log_free();
+
+	log_logger_t* general_logger = log_logger("general", log_writer_null());
+	log_logger_add_writer(general_logger, log_writer_stdout_coloured());
+	log_logger_add_writer(general_logger, log_writer_syslog(0));
+	log_logger_add_writer(general_logger, log_writer_file("../res/general.log"));
+
+	log_notice(log_logger_get("general"), "This was created by a multi-writer logger");
+
 	tsuccess();
 }
 

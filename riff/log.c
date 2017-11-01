@@ -11,11 +11,10 @@
 #include <syslog.h>
 #endif
 
-
 /* globals */
 static log_fmt_t* __gfmt = NULL;
 static hashmap_t* __gmap = NULL;
-static unsigned __gprio = LOG_DEFAULT_MIN_PRIO;
+static unsigned __gprio = LOG_PRIO_DEBUG;
 
 /* a format speicifer call */
 typedef void (*log_fmod_f)(log_msg_t* msg);
@@ -304,7 +303,16 @@ void __writer_stderr_coloured(log_msg_t* msg, void* impl) {
 	____writer_coloured(msg, impl, stderr);
 }
 
-log_logger_t* log_logger_custom(const char* name, log_fmt_t* fmt, log_writer_t writer) {
+void __writer_free(void* ptr) {
+	log_writer_t* w = (log_writer_t*)ptr;
+
+	if (w->writer_ptr)
+		free(w->writer_ptr);
+
+	free(ptr);
+}
+
+log_logger_t* log_logger_custom(const char* name, log_fmt_t* fmt, log_writer_t* writer) {
 	if (!__gmap)
 		__gmap = hashmap_init(8, free);
 
@@ -317,30 +325,60 @@ log_logger_t* log_logger_custom(const char* name, log_fmt_t* fmt, log_writer_t w
 	l->prio = LOG_DEFAULT_PRIO;
 	l->counter = 0;
 	l->fmt = (fmt)? fmt : log_fmt_get();
-	l->writer = writer;
+	l->writers = vector_init(1, sizeof(log_writer_t*), __writer_free);
+
+	log_logger_add_writer(l, writer);
 
 	return l;
 }
 
-log_writer_t log_writer_null(void)
-{return (log_writer_t) { __writer_null, NULL }; }
+void log_logger_add_writer(log_logger_t* logger, log_writer_t* writer) {
+	vector_push_back(logger->writers, writer);
+}
 
-log_writer_t log_writer_stdout(void)
-{return (log_writer_t) { __writer_stdout, NULL }; }
+log_writer_t* log_writer_null(void) {
+	log_writer_t* w = malloc(sizeof(log_writer_t));
+	w->writer = __writer_null;
+	w->writer_ptr = NULL;
+	return w;
+}
 
-log_writer_t log_writer_stderr(void)
-{return (log_writer_t) { __writer_stderr, NULL }; }
+log_writer_t* log_writer_stdout(void) {
+	log_writer_t* w = malloc(sizeof(log_writer_t));
+	w->writer = __writer_stdout;
+	w->writer_ptr = NULL;
+	return w;
+}
 
-log_writer_t log_writer_stderr_coloured(void)
-{return (log_writer_t) { __writer_stderr_coloured, NULL }; }
+log_writer_t* log_writer_stderr(void) {
+	log_writer_t* w = malloc(sizeof(log_writer_t));
+	w->writer = __writer_stderr;
+	w->writer_ptr = NULL;
+	return w;
+}
 
-log_writer_t log_writer_stdout_coloured(void)
-{return (log_writer_t) { __writer_stdout_coloured, NULL }; }
+log_writer_t* log_writer_stderr_coloured(void) {
+	log_writer_t* w = malloc(sizeof(log_writer_t));
+	w->writer = __writer_stderr_coloured;
+	w->writer_ptr = NULL;
+	return w;
+}
 
-log_writer_t log_writer_syslog(int option)
-{return (log_writer_t) { __writer_syslog, NULL }; }
+log_writer_t* log_writer_stdout_coloured(void){
+	log_writer_t* w = malloc(sizeof(log_writer_t));
+	w->writer = __writer_stdout_coloured;
+	w->writer_ptr = NULL;
+	return w;
+}
 
-log_writer_t log_writer_file(const char* path) {
+log_writer_t* log_writer_syslog(int option){
+	log_writer_t* w = malloc(sizeof(log_writer_t));
+	w->writer = __writer_syslog;
+	w->writer_ptr = NULL;
+	return w;
+}
+
+log_writer_t* log_writer_file(const char* path) {
 	FILE* targ = fopen(path, "a");
 
 	assert(targ != NULL);
@@ -348,10 +386,14 @@ log_writer_t log_writer_file(const char* path) {
 	struct __writer_data_basic* k = malloc(sizeof(struct __writer_data_basic));
 	k->target = targ;
 
-	return (log_writer_t) { __writer_basic, k };
+	log_writer_t* w = malloc(sizeof(log_writer_t));
+	w->writer = __writer_basic;
+	w->writer_ptr = k;
+
+	return w;
 }
 
-log_writer_t log_writer_capped(const char* path, size_t lim) {
+log_writer_t* log_writer_capped(const char* path, size_t lim) {
 	FILE* targ = fopen(path, "a");
 
 	assert(targ != NULL);
@@ -360,13 +402,15 @@ log_writer_t log_writer_capped(const char* path, size_t lim) {
 	k->target = targ;
 	k->lim = lim;
 
-	return (log_writer_t) { __writer_capped, k };
+	log_writer_t* w = malloc(sizeof(log_writer_t));
+	w->writer = __writer_capped;
+	w->writer_ptr = k;
+
+	return w;
 }
 
 void log_logger_free(log_logger_t* l) {
-	if (l->writer.writer_ptr)
-		free(l->writer.writer_ptr);
-
+	vector_free(l->writers);
 	hashmap_remove(__gmap, l->name);
 }
 
@@ -377,11 +421,18 @@ log_logger_t* log_logger_get(const char* name) {
 	return (log_logger_t*)hashmap_get(__gmap, name);
 }
 
+void __writer_free_from_bucket(hashmap_bucket_t* bucket, void* garbage)
+{vector_free(((log_logger_t*)bucket->value)->writers);}
+
 void log_free(void) {
+	hashmap_iterate(__gmap, __writer_free_from_bucket, NULL);
 	hashmap_free(__gmap);
 
 	if (__gfmt)
 		log_fmt_free(__gfmt);
+
+	__gmap = NULL;
+	__gfmt = NULL;
 }
 
 void log_wrapper(log_logger_t* l,
@@ -415,7 +466,9 @@ void log_wrapper(log_logger_t* l,
 
 	m->formatted = malloc(LOG_DEFAULT_FMT_BUFFER_SIZE);
 	log_fmt(l->fmt, m);
-	l->writer.writer(m, l->writer.writer_ptr);
+
+	for (vector_iterator(l->writers, log_writer_t*, i))
+		(*i)->writer(m, (*i)->writer_ptr);
 
 	free(m->formatted);
 	free(m);

@@ -1,4 +1,5 @@
 /* @TODO syslog openlog calls */
+/* @TODO multiple writers */
 
 #ifndef _LOG_H
 #define _LOG_H
@@ -9,13 +10,6 @@
 
 #include <time.h>
 #include <stdarg.h>
-
-#define LOG_DEFAULT_TIME_FMT "%Y-%m-%d %H:%M:%S"
-#define LOG_DEFAULT_PRIO LOG_PRIO_DEBUG
-#define LOG_DEFAULT_MIN_PRIO LOG_PRIO_DEBUG
-#define LOG_DEFAULT_FMT_BUFFER_SIZE 256
-#define LOG_DEFAULT_FMT "[%n] %m"
-#define LOG_DEFAULT_FMT_PAD 64
 
 #ifdef OS_LINUX
 #define LOG_SYSLOG
@@ -69,11 +63,11 @@ typedef struct {
 	size_t counter;
 
 	log_fmt_t* fmt;
-	log_writer_t writer;
+	vector_t* writers;
 } log_logger_t;
 
 /* create a new logger instance from a custom writer */
-log_logger_t* log_logger_custom(const char* name, log_fmt_t* fmt, log_writer_t writer);
+log_logger_t* log_logger_custom(const char* name, log_fmt_t* fmt, log_writer_t* writer);
 
 /* dealloc a logger and remove it from the global table */
 void log_logger_free(log_logger_t* l);
@@ -81,34 +75,37 @@ void log_logger_free(log_logger_t* l);
 /* create a logger */
 #define log_logger(name, writer) log_logger_custom(name, NULL, writer)
 
+/* add a new writer to the logger */
+void log_logger_add_writer(log_logger_t* logger, log_writer_t* writer);
+
 /* all the default writers */
 
 /* do nothiing with the output */
-log_writer_t log_writer_null(void);
+log_writer_t* log_writer_null(void);
 
 /* write to stdout */
-log_writer_t log_writer_stdout(void);
+log_writer_t* log_writer_stdout(void);
 
 /* write to stderr */
-log_writer_t log_writer_stderr(void);
+log_writer_t* log_writer_stderr(void);
 
 /* write to stdout, colour is determined by prio */
-log_writer_t log_writer_stdout_coloured(void);
+log_writer_t* log_writer_stdout_coloured(void);
 
 /* write to stderr, colour is determined by prio */
-log_writer_t log_writer_stderr_coloured(void);
+log_writer_t* log_writer_stderr_coloured(void);
 
 /* write to a file */
-log_writer_t log_writer_file(const char* path);
+log_writer_t* log_writer_file(const char* path);
 
 /* write to a file with a byte limit */
-log_writer_t log_writer_capped(const char* path, size_t lim);
+log_writer_t* log_writer_capped(const char* path, size_t lim);
 
 /* rotate to new file when limit is reached */
 /* @TODO */
 
 /* linux syslog, will ignore formatting... */
-log_writer_t log_writer_syslog(int option);
+log_writer_t* log_writer_syslog(int option);
 
 /* finally, destroy all globals and unfreed instances */
 void log_free(void);
@@ -137,6 +134,25 @@ void log_priority_set(unsigned p);
 
 /* get the global log level */
 unsigned log_priority_get(void);
+
+/* structure queries */
+
+#define log_logger_pattern_get(l) (l->fmt)
+
+#define log_logger_name_get(l) ((l)->name)
+
+#define log_logger_priority_get(l) ((l)->prio)
+
+#define log_logger_writer_get(l) ((l)->writer)
+
+#define log_logger_counter_get(l) ((l)->counter)
+
+#define log_logger_canlog(l, p) ((l)->prio >= (p) && (l)->prio >= log_get_priority())
+
+#define log_logger_priority_set(l, p) do { (l)->prio = (p); } while(0)
+
+#define log_logger_pattern_set(l, p) \
+	do { if (l->fmt) { log_fmt_free(l->fmt) } l->fmt = log_compile_pattern(p); } while(0)
 
 /* logger funcs */
 
@@ -172,25 +188,6 @@ unsigned log_priority_get(void);
 
 #define log_debug_if(t, logger, fmt, args...) \
 	do { if (t) log_log(logger, LOG_PRIO_DEBUG, fmt, ##args); } while(0)
-
-/* structure queries */
-
-#define log_logger_pattern_get(l) (l->fmt)
-
-#define log_logger_name_get(l) ((l)->name)
-
-#define log_logger_priority_get(l) ((l)->prio)
-
-#define log_logger_writer_get(l) ((l)->writer)
-
-#define log_logger_counter_get(l) ((l)->counter)
-
-#define log_logger_canlog(l, p) ((l)->prio >= (p) && (l)->prio >= log_get_priority())
-
-#define log_logger_priority_set(l, p) do { (l)->prio = (p); } while(0)
-
-#define log_logger_pattern_set(l, p) \
-	do { if (l->fmt) { log_fmt_free(l->fmt) } l->fmt = log_compile_pattern(p); } while(0)
 
 /* compile time priorities */
 
@@ -232,6 +229,32 @@ unsigned log_priority_get(void);
 #define LOG_DEBUG(logger, fmt, args...) log_log(logger, LOG_PRIO_DEBUG, fmt, ##args)
 #else
 #define LOG_DEBUG(logger, fmt, args...) /**/
+#endif
+
+/* defaults */
+
+#ifndef LOG_DEFAULT_TIME_FMT
+#define LOG_DEFAULT_TIME_FMT "%Y-%m-%d %H:%M:%S"
+#endif
+
+#ifndef LOG_DEFAULT_PRIO
+#define LOG_DEFAULT_PRIO LOG_PRIO_DEBUG
+#endif
+
+#ifndef LOG_DEFAULT_MIN_PRIO
+#define LOG_DEFAULT_MIN_PRIO LOG_PRIO_DEBUG
+#endif
+
+#ifndef LOG_DEFAULT_FMT_BUFFER_SIZE
+#define LOG_DEFAULT_FMT_BUFFER_SIZE 256
+#endif
+
+#ifndef LOG_DEFAULT_FMT
+#define LOG_DEFAULT_FMT "[%n] %m"
+#endif
+
+#ifndef LOG_DEFAULT_FMT_PAD
+#define LOG_DEFAULT_FMT_PAD 64
 #endif
 
 #endif // _LOG_H
