@@ -1,5 +1,7 @@
 #define LOG_LEVEL 3
 
+#include "test.h"
+
 #include "vector.h"
 #include "error.h"
 #include "hashmap.h"
@@ -11,56 +13,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-static char __gbuf[128];
-
-#define tdeclare(name) \
-	const char* name(void)
-
-#define tsuccess() \
-	return NULL;
-
-#define terror(m) \
-	return m
-
-#define tassert(m) \
-	do { if (!(m)) return \
-		snprintf(__gbuf, sizeof(__gbuf), "*Assertion failed %s:%u  - %s", \
-		__FILE__, __LINE__, #m), __gbuf; } while(0)
-
-char* __tassert(const char* message, const char* file, unsigned line) {
-	return __gbuf;
-}
-
-#define tassertstreq(a, b) \
-	tassert(strcmp((a), (b)) == 0)
-
-#define test(func) \
-	do { printf("*running test %s:\n", #func); const char* k = func(); \
-	if (k) printf("*failed: %s\n", k); else printf("*success\n"); } while(0)
-
-tdeclare(vector_test);
-tdeclare(hashmap_test);
-tdeclare(log_test);
-tdeclare(str_test);
-tdeclare(os_test);
-tdeclare(error_test);
-
-int main() {
-	test(vector_test);
-	test(hashmap_test);
-	test(log_test);
-	test(str_test);
-	test(os_test);
-	test(error_test);
-
-	return 0;
-}
-
 typedef struct {
 	int radius, mass, x, y;
 } vec_example_t;
 
-tdeclare(vector_test) {
+void vector_test(void) {
 	vector_t* m = vector_init(8, sizeof(char*), NULL);
 
 	char* appends[] = { "to", "interject", "for", "a" };
@@ -83,12 +40,12 @@ tdeclare(vector_test) {
 
 	vector_t* k = vector_copy(m);
 
-	tassert(k);
-	tassert(vector_eq(k, m));
+	test_assert(k);
+	test_assert(vector_eq(k, m));
 
 	vector_clear(m);
 
-	tassert(vector_empty(m));
+	test_assert(vector_empty(m));
 
 	vector_free(m);
 
@@ -96,7 +53,7 @@ tdeclare(vector_test) {
 	vector_push_back(j, "pranked");
 	vector_swap(j, k);
 
-	tassertstreq(vector_att(k, 0, char*), "pranked");
+	test_seq(vector_att(k, 0, char*), "pranked");
 
 	char* buffer = malloc(sizeof("I'd just like to interject for a moment... ") + 1);
 	char* b = buffer;
@@ -108,7 +65,7 @@ tdeclare(vector_test) {
 		*b++ = ' ';
 	}
 
-	tassertstreq(buffer, "I'd just like to interject for a moment... ");
+	test_seq(buffer, "I'd just like to interject for a moment... ");
 	free(buffer);
 
 	vector_free(j);
@@ -128,12 +85,10 @@ tdeclare(vector_test) {
 	vector_push_back(heap_vec, mexb);
 	vector_push_back(heap_vec, mexc);
 
-	tassert((*(vec_example_t**)vector_at(heap_vec, 1))->mass == 75);
+	test_assert((*(vec_example_t**)vector_at(heap_vec, 1))->mass == 75);
 
 	vector_remove(heap_vec, 1);
 	vector_free(heap_vec);
-
-	tsuccess();
 }
 
 void iscool(hashmap_bucket_t* b, void* v) {
@@ -141,19 +96,19 @@ void iscool(hashmap_bucket_t* b, void* v) {
 		str_cpy(v, b->value);
 }
 
-tdeclare(hashmap_test) {
+void hashmap_test(void) {
 	/* realistically a table of length 2 is absurd, but this is to maximize collisions */
 	hashmap_t* hm = hashmap_init(2, NULL);
 
-	tassert(hashmap_empty(hm));
+	test_assert(hashmap_empty(hm));
 	hashmap_set(hm, "james", "is a sick cunt");
 	hashmap_set(hm, "john", "is just a cunt");
 	hashmap_set(hm, "james", "is a great bloke");
 	hashmap_remove(hm, "john");
-	tassert(hashmap_length(hm) == 1);
+	test_assert(hashmap_length(hm) == 1);
 
-	tassertstreq(hashmap_get(hm, "james"), "is a great bloke");
-	tassert(hashmap_get(hm, "peter") == NULL);
+	test_seq(hashmap_get(hm, "james"), "is a great bloke");
+	test_assert(hashmap_get(hm, "peter") == NULL);
 
 	hashmap_set(hm, "jim", "is lame");
 	hashmap_set(hm, "jerry", "is stupid");
@@ -166,7 +121,7 @@ tdeclare(hashmap_test) {
 
 	char* buffer = malloc(128);
 	hashmap_iterate(hm, iscool, buffer);
-	tassertstreq(buffer, "is a god");
+	test_seq(buffer, "is a god");
 
 	hashmap_set(hm, "cameron", "is an idiot");
 	hashmap_set(hm, "ruchir", "is a god");
@@ -179,8 +134,8 @@ tdeclare(hashmap_test) {
 	hashmap_remove(hm, "summer");
 	hashmap_remove(hm, "morty");
 
-	tassert(hashmap_get(hm, "rick") == NULL);
-	tassert(hashmap_get(hm, "beth") == NULL);
+	test_assert(hashmap_get(hm, "rick") == NULL);
+	test_assert(hashmap_get(hm, "beth") == NULL);
 
 	hashmap_free(hm);
 
@@ -197,14 +152,13 @@ tdeclare(hashmap_test) {
 
 	*bae = 720;
 
-	tassert(*(int*)hashmap_get(memhm, "bae") == 720);
+	test_assert(*(int*)hashmap_get(memhm, "bae") == 720);
 
 	hashmap_free(memhm);
-
-	tsuccess();
 }
 
-tdeclare(log_test) {
+void log_test(void) {
+	return;
 	log_logger_t* console = log_logger("console", log_writer_stdout());
 
 	log_notice(console, "Hello %s", "world!");
@@ -215,7 +169,6 @@ tdeclare(log_test) {
 
 	log_panic(console, "I'm suiciding now...");
 	log_logger_free(console);
-
 
 	log_logger_t* rainbow = log_logger("rainbow", log_writer_stdout_coloured());
 
@@ -244,138 +197,136 @@ tdeclare(log_test) {
 	log_logger_add_writer(general_logger, log_writer_file("../res/general.log"));
 
 	log_notice(log_logger_get("general"), "This was created by a multi-writer logger");
-
-	tsuccess();
 }
 
 bool apply_filter(char c) {
 	return !!((int) c % 2);
 }
 
-tdeclare(str_test) {
+void str_test(void) {
 	char* mem = str_sprintf("I am a %s, who is %d years old.", "god", 15);
-	tassertstreq("I am a god, who is 15 years old.", mem);
+	test_seq("I am a god, who is 15 years old.", mem);
 	free(mem);
 
 	char* buffer = malloc(256);
-	tassertstreq("-1238948", str_its(-1238948, buffer));
+	test_seq("-1238948", str_its(-1238948, buffer));
 
 	str_cpy(buffer, "\n  meme man \n  ");
-	tassertstreq(str_strip(buffer), "meme man");
+	test_seq(str_strip(buffer), "meme man");
 
 	str_ttble_t* tt = str_gen_ttble(
 			"abcdefghijklmnopqrstuvwxyz",
 			"cdefghijklmnopqrstuvwxyzab");
 
-	tassertstreq(str_trans_cpy(tt, buffer, "hello world!"), "jgnnq yqtnf!");
+	test_seq(str_trans_cpy(tt, buffer, "hello world!"), "jgnnq yqtnf!");
 	str_free_ttble(tt);
 
-	tassertstreq(str_filter(buffer, "hello world!", apply_filter), "eowo!");
+	test_seq(str_filter(buffer, "hello world!", apply_filter), "eowo!");
 
-	tassert(str_find_substr("meme i am a meme man lordmeme", "meme") == 0);
-	tassert(str_find_substr_count("meme i am a meme man lordmeme", "meme") == 3);
+	test_assert(str_find_substr("meme i am a meme man lordmeme", "meme") == 0);
+	test_assert(str_find_substr_count("meme i am a meme man lordmeme", "meme") == 3);
 
 	char* a = str_replace(buffer, "meme i am a meme man lordmeme", "meme", "gay");
-	tassertstreq(a, "gay i am a gay man lordgay");
+	test_seq(a, "gay i am a gay man lordgay");
 
-	tassert(str_searcho("abcdefghijklmnopqrstuvwxyz", 0, 26, 'n') == 13);
-	tassert(str_search("abcdefghijklmnopqrstuvwxyz", 'n') == 13);
+	test_assert(str_searcho("abcdefghijklmnopqrstuvwxyz", 0, 26, 'n') == 13);
+	test_assert(str_search("abcdefghijklmnopqrstuvwxyz", 'n') == 13);
 
 	str_cpy(buffer, "abcdefghijklmnopqrstuvwxyz");
-	tassert(str_dirsearch(buffer, buffer + 26, 'n') == 13);
+	test_assert(str_dirsearch(buffer, buffer + 26, 'n') == 13);
 
-	tassert(*(str_find_chr(buffer, 'm') + 1) == 'n');
+	test_assert(*(str_find_chr(buffer, 'm') + 1) == 'n');
 
 	str_cpy(buffer, "I'd like to interject for a moment");
 	str_tolower(buffer);
 
-	tassert(str_find_first(buffer, "aeiou") == 0);
-	tassert(str_find_last(buffer, "aeiou") == 31);
-	tassert(str_find_firstn(buffer, "aeiou") == 1);
-	tassert(str_find_lastn(buffer, "aeiou") == 33);
+	test_assert(str_find_first(buffer, "aeiou") == 0);
+	test_assert(str_find_last(buffer, "aeiou") == 31);
+	test_assert(str_find_firstn(buffer, "aeiou") == 1);
+	test_assert(str_find_lastn(buffer, "aeiou") == 33);
 
 	str_cpy(buffer, "I am a God!");
-	tassertstreq(str_swap_case(buffer), "i AM A gOD!");
-	tassertstreq(str_tolower(buffer), "i am a god!");
-	tassertstreq(str_toupper(buffer), "I AM A GOD!");
+	test_seq(str_swap_case(buffer), "i AM A gOD!");
+	test_seq(str_tolower(buffer), "i am a god!");
+	test_seq(str_toupper(buffer), "I AM A GOD!");
 
-	tassertstreq(str_dircpy(buffer, "hello world!", -1, -2), "!lo le");
-	tassertstreq(str_dircpy(buffer, "hello world!", -1, 2), "hlowrd");
+	test_seq(str_dircpy(buffer, "hello world!", -1, -2), "!lo le");
+	test_seq(str_dircpy(buffer, "hello world!", -1, 2), "hlowrd");
 
-	tassertstreq(str_concat(4, buffer, "I ", "am ", "a ", "God!"), "I am a God!");
+	test_seq(str_concat(4, buffer, "I ", "am ", "a ", "God!"), "I am a God!");
 
-	tassertstreq(str_mul(buffer, "meme ", 3), "meme meme meme ");
+	test_seq(str_mul(buffer, "meme ", 3), "meme meme meme ");
 
 	char* nbuffer = str_dup(buffer);
-	tassertstreq(buffer, nbuffer);
+	test_seq(buffer, nbuffer);
 	free(nbuffer);
 
-	tassertstreq(str_lpad(buffer, "example", 11, '*'), "****example");
-	tassertstreq(str_rpad(buffer, "example", 11, '*'), "example****");
-	tassertstreq(str_cpad(buffer, "example", 11, '*'), "**example**");
+	test_seq(str_lpad(buffer, "example", 11, '*'), "****example");
+	test_seq(str_rpad(buffer, "example", 11, '*'), "example****");
+	test_seq(str_cpad(buffer, "example", 11, '*'), "**example**");
 
-	tassertstreq(str_tab_to_space(buffer, "this \t  \t", 4), "this           ");
-	tassertstreq(str_space_to_tab(buffer, "this           ", 4), "this\t\t   ");
+	test_seq(str_tab_to_space(buffer, "this \t  \t", 4), "this           ");
+	test_seq(str_space_to_tab(buffer, "this           ", 4), "this\t\t   ");
 
-	tassertstreq(str_cescape('\f'), "\\f");
-	tassertstreq(str_escape(buffer, "Hello \t world!"), "Hello \\t world!");
+	test_seq(str_cescape('\f'), "\\f");
+	test_seq(str_escape(buffer, "Hello \t world!"), "Hello \\t world!");
 
 	/* adress str_split linker error */
 	str_stble_t st = str_split("I am a God!", ' ');
 
-	tassertstreq(st.tble[0], "I");
-	tassertstreq(st.tble[1], "am");
-	tassertstreq(st.tble[2], "a");
-	tassertstreq(st.tble[3], "God!");
+	test_seq(st.tble[0], "I");
+	test_seq(st.tble[1], "am");
+	test_seq(st.tble[2], "a");
+	test_seq(st.tble[3], "God!");
 
-	tassertstreq(str_join(buffer, '*', st), "I*am*a*God!");
+	test_seq(str_join(buffer, '*', st), "I*am*a*God!");
 
 	str_free_split(st);
 
-	tassert(str_len_including("hello world!", "aeiou") == 3);
-	tassert(str_len_excluding("hello world!", "aeiou") == 9);
+	test_assert(str_len_including("hello world!", "aeiou") == 3);
+	test_assert(str_len_excluding("hello world!", "aeiou") == 9);
 
-	tassertstreq(str_zfill(buffer, "1234", 8), "00001234");
+	test_seq(str_zfill(buffer, "1234", 8), "00001234");
 
-	tassertstreq(str_reverse(buffer, "I am a God!"), "!doG a ma I");
+	test_seq(str_reverse(buffer, "I am a God!"), "!doG a ma I");
 
-	tassertstreq(str_newline_to_space(buffer, "Hello\nworld!"), "Hello world!");
+	test_seq(str_newline_to_space(buffer, "Hello\nworld!"), "Hello world!");
 
-	tassertstreq(str_remove(buffer, "Hello world!", "Hello "), "world!");
+	test_seq(str_remove(buffer, "Hello world!", "Hello "), "world!");
 
 	char* c = str_dup("meme");
 	for (str_iterator(c, it))
 		c[it.i] = it.c + 1;
 
-	tassertstreq(c, "nfnf");
+	test_seq(c, "nfnf");
 
 	free(buffer);
-
-	tsuccess();
 }
 
-tdeclare(os_test) {
-	OS_SYSCALL("echo \"This was not done with printf\";");
-
+void os_test(void) {
 	OS_MKDIR("some_dir");
 	OS_RENAME("some_dir", "my_dir");
 	OS_RMDIR("my_dir");
-
-	tsuccess();
 }
 
-tdeclare(error_test) {
-	printf("error: %s\n", error_gets());
+void error_test(void) {
+	test_seq(error_gets(), "no error");
 	error_set("something's wrong...");
-	printf("error: %s\n", error_gets());
+
+	test_seq(error_gets(), "something's wrong...");
 	error_code(ERROR_LOGICAL);
-	printf("error: %s\n", error_gets());
-	error_code(ERROR_LOGICAL);
+
+	test_seq(error_gets(), "logical");
 	error_clear();
+}
 
-	error_logger(log_logger("err logger", log_writer_stdout()));
-	error_set("this is handled by a logger");
-	error_code(ERROR_OS);
+int main() {
+	test_run(vector_test);
+	test_run(hashmap_test);
+	test_run(log_test);
+	test_run(str_test);
+	test_run(os_test);
+	test_run(error_test);
 
-	tsuccess();
+	test_resolve();
 }

@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 
+#include "generic.h"
 #include "log.h"
 
 #define ERROR_MAX_LEN 1024
@@ -46,14 +47,18 @@ enum {
 #undef XX
 };
 
-/* set if expression exaluates to true */
 #define error_set_if(expression, fmt, args...) \
 	do { if (expression) { error_set(fmt, ##args); } } while(0)
 
-/* assertion */
-#define error_assert(expression) \
+#define __error_assert(expression) \
 	do { if(!(expression)) { \
 		error_set("assertion failed (%s:%d): %s", __FILE__, __LINE__, #expression); \
 	} } while(0)
+
+#if DEBUG_LEVEL == 1 || defined(ERROR_FORCE_ASSERT)
+#	define error_assert(expression) __error_assert(expression)
+#else
+#	define error_assert(expression) /**/
+#endif
 
 #endif

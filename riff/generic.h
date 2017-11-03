@@ -50,10 +50,9 @@ typedef signed long ssize_t;
 #	endif
 #endif
 
-#ifdef OS_WINDOWS
+#if ((__GNUC__ >= 2) || defined(_MSC_VER) || defined (__WATCOMC__))
 #	define __func__ __FUNCTION__
-#endif
-#ifndef __func__
+#else
 #	define __func__ "<anonymous>"
 #endif
 
@@ -62,6 +61,14 @@ typedef signed long ssize_t;
 #		define va_copy __va_copy
 #	else
 #		define va_copy(d, s) ((d) = (s))
+#	endif
+#endif
+
+#ifndef DEBUG_LEVEL
+#	if defined(_DEBUG) || defined(DEBUG) || (defined(__GNUC__) && !defined(__OPTIMIZE__))
+#		define DEBUG_LEVEL 1
+#	else
+#		define DEBUG_LEVEL 0
 #	endif
 #endif
 
