@@ -1,6 +1,7 @@
 #define LOG_LEVEL 3
 
 #include "vector.h"
+#include "error.h"
 #include "hashmap.h"
 #include "log.h"
 #include "str.h"
@@ -42,6 +43,7 @@ tdeclare(hashmap_test);
 tdeclare(log_test);
 tdeclare(str_test);
 tdeclare(os_test);
+tdeclare(error_test);
 
 int main() {
 	test(vector_test);
@@ -49,6 +51,7 @@ int main() {
 	test(log_test);
 	test(str_test);
 	test(os_test);
+	test(error_test);
 
 	return 0;
 }
@@ -357,6 +360,22 @@ tdeclare(os_test) {
 	OS_MKDIR("some_dir");
 	OS_RENAME("some_dir", "my_dir");
 	OS_RMDIR("my_dir");
+
+	tsuccess();
+}
+
+tdeclare(error_test) {
+	printf("error: %s\n", error_gets());
+	error_set("something's wrong...");
+	printf("error: %s\n", error_gets());
+	error_code(ERROR_LOGICAL);
+	printf("error: %s\n", error_gets());
+	error_code(ERROR_LOGICAL);
+	error_clear();
+
+	error_logger(log_logger("err logger", log_writer_stdout()));
+	error_set("this is handled by a logger");
+	error_code(ERROR_OS);
 
 	tsuccess();
 }
