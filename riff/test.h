@@ -27,7 +27,7 @@ typedef void test_f(void);
 #define test_run(test) do { \
 		if (__test_timer == 0) __test_timer = clock(); \
 		__test_state = 0; \
-		printf("\n\nRunning: %s\n", #test); \
+		printf("Running: %s\n", #test); \
 		test(); \
 		__test_count++; \
 		if (__test_state != 0) { \

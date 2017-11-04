@@ -104,5 +104,3 @@ void str_test(void) {
 
 	free(buffer);
 }
-
-int main() { test_run(str_test); test_resolve(); }

@@ -1,29 +1,34 @@
-.PHONY: all clean run force
+.PHONY: all clean run force debug
 
 CC=clang
-ODIR=../build/tests
-LDIR=../build
+ODIR=../build
+BPROC=$(ODIR)/tests
 
-OBJ := $(wildcard $(LDIR)/*.o)
-EXE := $(patsubst %.c,$(ODIR)/%,$(wildcard *.c))
+OOBJ := $(wildcard $(ODIR)/*.o)
+SRC := $(wildcard *c)
+MOBJ := $(addprefix $(ODIR)/,$(notdir $(SRC:.c=.o)))
 
 FLAGS=-std=c99 -g -Wall
-LFLAGS= -L../riff $(OBJ) -lm -Wl,-rpath ../riff
+LFLAGS= -L../riff $(OOBJ) -lm -Wl,-rpath ../riff
 IFLAGS=-I. -I../riff/
 
-all: $(EXE)
+all: $(BPROC)
 
-$(EXE): %:%.o
+$(BPROC): $(MOBJ)
 	$(CC) $(FLAGS) -o $@ $^ $(LFLAGS)
 
 $(ODIR)/%.o: %.c
-	@mkdir -p $(ODIR)
 	$(CC) $(FLAGS) -o $@ -c $< $(IFLAGS)
 
-run: $(EXE)
-	$(patsubst %, ./%;,$(EXE))
+run: $(BPROC)
+	@echo "--- RUNNING ---"
+	@./$(BPROC)
+
+debug: $(BPROC)
+	@lldb $(BPROC)
 
 force: clean run
 
 clean:
-	rm -fv $(ODIR)/*
+	rm -fv $(MOBJ)
+	rm -fv $(BPROC)

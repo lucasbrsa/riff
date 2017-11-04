@@ -80,5 +80,3 @@ void vector_test(void) {
 	vector_remove(heap_vec, 1);
 	vector_free(heap_vec);
 }
-
-int main() { test_run(vector_test); test_resolve(); }

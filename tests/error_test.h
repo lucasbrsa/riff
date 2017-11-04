@@ -12,5 +12,3 @@ void error_test(void) {
 
 	error_clear();
 }
-
-int main() { test_run(error_test); test_resolve(); }

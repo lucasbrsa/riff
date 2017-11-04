@@ -5,17 +5,16 @@ all: tests
 riff:
 	@cd riff && $(MAKE)
 
-tests:
+tests:riff
+	@cd tests && $(MAKE) run
+
+debug:riff
+	@cd tests && $(MAKE) $@
+
+force:clean
 	@cd riff && $(MAKE) force
 	@cd tests && $(MAKE) force
 
-run: riff
-	@cd riff && $(MAKE) $@
-
-debug:
-	@cd riff && $(MAKE) $@
-
-force:clean run
-
 clean:
 	@cd riff && $(MAKE) $@
+	@cd tests && $(MAKE) $@

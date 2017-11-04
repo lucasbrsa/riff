@@ -67,5 +67,3 @@ void hashmap_test(void) {
 
 	hashmap_free(memhm);
 }
-
-int main() { test_run(hashmap_test); test_resolve(); }

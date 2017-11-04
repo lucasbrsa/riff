@@ -1,4 +1,4 @@
-.PHONY: clean run debug force
+.PHONY: clean force
 
 CC=clang
 IDIR=-I.

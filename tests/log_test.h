@@ -1,3 +1,4 @@
+#undef LOG_LEVEL
 #define LOG_LEVEL 3
 
 #include "test.h"
@@ -44,5 +45,3 @@ void log_test(void) {
 
 	log_notice(log_logger_get("general"), "This was created by a multi-writer logger");
 }
-
-int main() { test_run(log_test); test_resolve(); }
