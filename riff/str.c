@@ -1,4 +1,5 @@
 #include "str.h"
+#include "error.h"
 
 #include <math.h>
 #include <stdio.h> /* can be removed once int2hex() is implemented */
@@ -19,7 +20,7 @@ char* str_vsprintf(const char* fmt, va_list ap) {
 	va_copy(bp, ap);
 
 	if (fmt == NULL)
-		return NULL;
+		return error_code(ERROR_NULL_PARAM), NULL;
 
 	size_t len = vsnprintf(NULL, 0, fmt, ap) + 1;
 	char* buffer = malloc(len);
@@ -110,7 +111,10 @@ char* str_strip(char* buf) {
 }
 
 str_ttble_t* str_gen_ttble(const char* keys, const char* vals) {
-	/* assert(strlen(keys) == strlen(vals)) */
+	if (strlen(keys) > strlen(vals)) {
+		error_set("can't generate string ttble when number of keys is more than number of vals");
+		return NULL;
+	}
 
 	str_ttble_t* t = malloc(sizeof(str_ttble_t));
 
@@ -118,7 +122,7 @@ str_ttble_t* str_gen_ttble(const char* keys, const char* vals) {
 	for (it = 0; it < 256; it++)
 		t->lut[it] = it;
 
-	while (*keys && *vals)
+	while (*keys)
 		t->lut[(size_t)*keys++] = *vals++;
 
 	return t;
@@ -446,6 +450,10 @@ const char* str_cescape(int c) {
 	};
 
 	/* assert(c < 128); */
+	if (c >= 128) {
+		error_set("can't escape extended ascii char, use str_cexescape instead");
+		return NULL;
+	}
 	return str_etble[c];
 }
 

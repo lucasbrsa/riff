@@ -61,7 +61,7 @@ typedef void test_f(void);
 #define test_ieq(a, b) do { \
 		int __aexp = (a), __bexp = (b); \
 		if (__aexp != __bexp) \
-			__test_assertion_fail(##(a == b)); \
+			__test_assertion_fail(#a " should be equal to " #b); \
 		else \
 			__test_assertion_success(); \
 	} while(0)
@@ -69,7 +69,7 @@ typedef void test_f(void);
 #define test_deq(a, b) do { \
 		double __aexp = (a), __bexp = (b); \
 		if (fabs(__aexp - __bexp) > TEST_EPSILON) \
-			__test_assertion_fail(##(a == b)); \
+			__test_assertion_fail(#a " should be equal to " #b); \
 		else \
 			__test_assertion_success(); \
 	} while(0)

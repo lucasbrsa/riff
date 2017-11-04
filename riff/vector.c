@@ -1,5 +1,6 @@
 #include "vector.h"
 #include "generic.h"
+#include "error.h"
 
 #include <assert.h>
 #include <string.h>
@@ -15,7 +16,7 @@ bool vector_realloc(vector_t* v, size_t len) {
 	char* r = realloc(v->data, len * v->blksz);
 
 	if (!r)
-		return false;
+		return error_code(ERROR_ALLOCATION), false;
 
 	v->data = r;
 	v->capacity = len;
@@ -57,6 +58,7 @@ vector_t* vector_init(size_t start_len, size_t element_size, vector_del_f* delet
 		if (!element_size || !vector_realloc(v, start_len))
 			v = 0, free(v);
 	}
+	else error_code(ERROR_ALLOCATION);
 
 	return v;
 }
@@ -66,6 +68,7 @@ vector_t* vector_copy(const vector_t* v) {
 
 	if (!memcpy(k->data, v->data, v->size * v->blksz)) {
 		vector_free(k);
+		error_set("could not copy vector, memcpy failed");
 		return NULL;
 	}
 
@@ -86,12 +89,12 @@ void vector_free(vector_t* v) {
 bool vector_insert(vector_t* v, size_t index, void* val) {
 	if (v->size+1 > v->capacity)
 		if (!vector_realloc(v, VECTOR_GROWTH(v->capacity)))
-			return false;
+			return error_set("could not realloc vector for insertion"), false;
 
 	char* o = v->data + (index * v->blksz);
 
 	if (!memmove(o + v->blksz, o, v->blksz * (v->size - index)))
-		return false;
+		return error_set("could not insert into vector"), false;
 
 	memcpy(o, &val, v->blksz); /* don't feel like checking */
 	v->size++;
@@ -106,7 +109,7 @@ bool vector_remove(vector_t* v, size_t index) {
 	char* i = v->data + (index * v->blksz);
 
 	if (!memmove(i, i + v->blksz, v->blksz * (v->size - index)))
-		return false;
+		return error_set("could not remove from vector"), false;
 
 	v->size--;
 	return true;
@@ -122,11 +125,11 @@ bool vector_append(vector_t* v, const void* vals, size_t val_count) {
 		while (amnt < new_count);
 
 		if (!vector_realloc(v, amnt))
-			return false;
+			return error_set("could not resize vector in order to append to vector"), false;
 	}
 
 	if (!memcpy(v->data + (v->size * v->blksz), /* & */ vals, v->blksz * val_count))
-		return false;
+		return error_set("could not append to vector"), false;
 
 	v->size = new_count;
 

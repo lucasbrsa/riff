@@ -1,4 +1,5 @@
 #include "hashmap.h"
+#include "error.h"
 
 #include <math.h>
 #include <malloc.h>
@@ -48,8 +49,10 @@ void hashmap_iterate(hashmap_t* map, void(*func)(hashmap_bucket_t*, void*), void
 bool hashmap_set(hashmap_t* map, const char* key, void* value) {
 	hashmap_bucket_t *head = hashmap_bucket(map, key), *it;
 
-	if (!key)
+	if (!key) {
+		error_code(ERROR_NULL_PARAM);
 		return false;
+	}
 
 	if (head->key)
 	{
@@ -81,8 +84,10 @@ bool hashmap_set(hashmap_t* map, const char* key, void* value) {
 void* hashmap_get(hashmap_t* map, const char* key) {
 	hashmap_bucket_t* current = hashmap_bucket(map, key);
 
-	if (!key || !current->key)
+	if (!key || !current->key) {
+		error_code(ERROR_NULL_PARAM);
 		return NULL;
+	}
 
 	while (current) {
 		if (current->key && strcmp(current->key, key) == 0)
@@ -97,8 +102,10 @@ void* hashmap_get(hashmap_t* map, const char* key) {
 bool hashmap_remove(hashmap_t* map, const char* key) {
 	hashmap_bucket_t* target = hashmap_bucket(map, key);
 
-	if (!key || !target->key)
+	if (!key || !target->key) {
+		error_code(ERROR_NULL_PARAM);
 		return false;
+	}
 
 	map->imems--;
 

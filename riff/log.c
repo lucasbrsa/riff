@@ -3,6 +3,7 @@
 #include <malloc.h>
 #include <assert.h>
 
+#include "error.h"
 #include "log.h"
 #include "hashmap.h"
 #include "str.h"
@@ -70,14 +71,23 @@ void __p(log_msg_t* msg) {
 		"debug"
 	};
 
-	assert(msg->priority >= 0 && msg->priority <= (sizeof(lut) / sizeof(char*)));
+	if (!(msg->priority <= (sizeof(lut) / sizeof(char*)))) {
+		error_set("used %p in log fmt, but could not convert prio to string");
+		return;
+	}
+
 	msg->formatted += str_cpy(msg->formatted, lut[msg->priority]);
 }
 
 void __s(log_msg_t* msg) {
 	static const char* lut = "LDIWEC";
 
-	assert(msg->priority >= 0 && msg->priority < sizeof("LDIWEC"));
+
+	if (!(msg->priority < sizeof("LDIWEC"))) {
+		error_set("used %s in log fmt, but could not convert prio to string");
+		return;
+	}
+
 	*msg->formatted++ = *(lut + msg->priority);
 }
 
@@ -177,7 +187,10 @@ void log_fmt(log_fmt_t* f, log_msg_t* m) {
 	for (vector_iterator(f->stack, log_fpair_t*, it)) {
 		log_fpair_t tmp = **(log_fpair_t**)(it);
 
-		assert(tmp.type == LOG_FMT_STRR || tmp.type == LOG_FMT_CBAK);
+		if (!(tmp.type == LOG_FMT_STRR || tmp.type == LOG_FMT_CBAK)) {
+			error_set("when parsing log fmt the fmt stack become corrupted");
+			continue;
+		}
 
 		diff = (size_t)m->formatted - (size_t)beg;
 		if (diff + LOG_DEFAULT_FMT_PAD >= buf_size) {
@@ -396,7 +409,10 @@ log_writer_t* log_writer_file(const char* path) {
 log_writer_t* log_writer_capped(const char* path, size_t lim) {
 	FILE* targ = fopen(path, "a");
 
-	assert(targ != NULL);
+	if (targ == NULL) {
+		error_code(ERROR_FILE);
+		return NULL;
+	}
 
 	struct __writer_data_capped* k = malloc(sizeof(struct __writer_data_capped));
 	k->target = targ;
@@ -421,8 +437,9 @@ log_logger_t* log_logger_get(const char* name) {
 	return (log_logger_t*)hashmap_get(__gmap, name);
 }
 
-void __writer_free_from_bucket(hashmap_bucket_t* bucket, void* garbage)
-{vector_free(((log_logger_t*)bucket->value)->writers);}
+void __writer_free_from_bucket(hashmap_bucket_t* bucket, void* garbage) {
+	vector_free(((log_logger_t*)bucket->value)->writers);
+}
 
 void log_free(void) {
 	hashmap_iterate(__gmap, __writer_free_from_bucket, NULL);
