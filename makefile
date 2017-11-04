@@ -1,17 +1,21 @@
-.PHONY: all riff clean run force debug
+.PHONY: all riff tests clean run force debug
 
-all: riff
+all: tests
 
 riff:
-	cd riff && $(MAKE)
+	@cd riff && $(MAKE)
+
+tests:
+	@cd riff && $(MAKE) force
+	@cd tests && $(MAKE) force
 
 run: riff
-	cd riff && $(MAKE) $@
+	@cd riff && $(MAKE) $@
 
 debug:
-	cd riff && $(MAKE) $@
+	@cd riff && $(MAKE) $@
 
 force:clean run
 
 clean:
-	cd riff && $(MAKE) $@
+	@cd riff && $(MAKE) $@
