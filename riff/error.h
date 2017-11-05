@@ -18,7 +18,7 @@
 #define ERROR_PRIO LOG_PRIO_ERROR
 
 #ifndef ERROR_LOG_ONSET
-#	define ERROR_LOG_ONSET 1
+#	define ERROR_LOG_ONSET 0
 #endif
 
 typedef struct {

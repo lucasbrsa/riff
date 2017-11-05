@@ -79,8 +79,9 @@ void error_log(void) {
 	if (glob_stack == NULL)
 		return;
 
-	for (vector_iterator(glob_stack, error_t, i)) {
-		log_wrapper(glob_logger, i->func, i->file, i->line, ERROR_PRIO, ERROR_FMT, i->msg);
+	for (int i = 0; i < vector_size(glob_stack); i++) {
+		error_t* e = vector_att(glob_stack, i, error_t*);
+		log_wrapper(glob_logger, e->func, e->file, e->line, ERROR_PRIO, ERROR_FMT, e->msg);
 	}
 }
 

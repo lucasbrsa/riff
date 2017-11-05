@@ -442,8 +442,10 @@ void __writer_free_from_bucket(hashmap_bucket_t* bucket, void* garbage) {
 }
 
 void log_free(void) {
-	hashmap_iterate(__gmap, __writer_free_from_bucket, NULL);
-	hashmap_free(__gmap);
+	if (__gmap) {
+		hashmap_iterate(__gmap, __writer_free_from_bucket, NULL);
+		hashmap_free(__gmap);
+	}
 
 	if (__gfmt)
 		log_fmt_free(__gfmt);

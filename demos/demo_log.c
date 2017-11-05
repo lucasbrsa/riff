@@ -1,11 +1,8 @@
-#undef LOG_LEVEL
 #define LOG_LEVEL 3
 
-#include "test.h"
 #include "log.h"
 
-void log_test(void) {
-	return;
+int main() {
 	log_logger_t* console = log_logger("console", log_writer_stdout());
 
 	log_notice(console, "Hello %s", "world!");
@@ -30,7 +27,6 @@ void log_test(void) {
 
 	log_logger_t* syslogger = log_logger("syslogger", log_writer_syslog(0));
 	log_notice(syslogger, "This was written through %s", "log.h");
-
 
 	LOG_DEBUG(rainbow, "This line of code never ran...");
 	LOG_INFO(rainbow, "This line of code never ran...");

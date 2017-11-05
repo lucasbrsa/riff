@@ -1,9 +1,9 @@
-#include "error_test.h"
-#include "hashmap_test.h"
-#include "log_test.h"
-#include "os_test.h"
-#include "str_test.h"
-#include "vector_test.h"
+#include "test_error.h"
+#include "test_hashmap.h"
+#include "test_log.h"
+#include "test_os.h"
+#include "test_str.h"
+#include "test_vector.h"
 
 #include "test.h"
 
