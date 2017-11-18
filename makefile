@@ -1,23 +1,17 @@
-.PHONY: all riff tests clean run force debug demos
+.PHONY: all build test clean rebuild
 
-all: tests
+MFLAGS=--no-print-directory
 
-riff:
-	@cd riff && $(MAKE)
+all: build
 
-tests:riff
-	@cd tests && $(MAKE) run
+build:
+	@cd riff && $(MAKE) $(MFLAGS)
 
-debug:riff
-	@cd tests && $(MAKE) $@
-
-force:clean
-	@cd riff && $(MAKE) force
-	@cd tests && $(MAKE) force
-
-demos:riff
-	@cd demos && $(MAKE) run
+test:build
+	@cd test && $(MAKE) $(MFLAGS) run
 
 clean:
-	@cd riff && $(MAKE) $@
-	@cd tests && $(MAKE) $@
+	@cd riff && $(MAKE) $(MFLAGS) $@
+	@cd test && $(MAKE) $(MFLAGS) $@
+
+rebuild: clean build

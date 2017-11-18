@@ -13,7 +13,7 @@
 
 #define ERROR_MAX_LEN 1024
 
-#define ERROR_FMT "(err) %s"
+#define ERROR_FMT "%s"
 
 #define ERROR_PRIO LOG_PRIO_ERROR
 

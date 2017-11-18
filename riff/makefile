@@ -1,22 +1,28 @@
-.PHONY: clean force
+.PHONY: clean rebuild all list
 
 CC=clang
-IDIR=-I.
 SDIR=.
 ODIR=../build
+BPROC=$(ODIR)/libriff.a
 
 SRC := $(wildcard $(SDIR)/*.c)
 OBJ := $(addprefix $(ODIR)/,$(notdir $(SRC:.c=.o)))
 
-LFLAGS=-lm
-CFLAGS=-std=c99 -g -Wall $(IDIR)
+LFLAGS=-cvq
+CFLAGS=-std=c99 -g -Wall -I.
 
-all: $(OBJ)
+all: $(BPROC)
 
 $(ODIR)/%.o: $(SDIR)/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-force: clean all
+$(BPROC): $(OBJ)
+	ar $(LFLAGS) $(BPROC) $(OBJ)
+
+list: $(BPROC)
+	@ar -t $(BPROC)
 
 clean:
-	rm -fv $(ODIR)/*.o
+	@rm -fv $(BPROC) $(ODIR)/*.o
+
+rebuild: clean all

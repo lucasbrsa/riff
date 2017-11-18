@@ -1,9 +1,11 @@
-[Bb]uild/*.o
+[Bb]uild/
 [Dd]ebug/
 *.sln
 
 # Wait till the project increases in size
 [Dd]ocs/
+
+demos/*.o
 
 *.vcxproj
 *.vcxproj.filters

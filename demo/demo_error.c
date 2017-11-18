@@ -3,6 +3,7 @@
 
 int main() {
 	error_logger(log_logger("error log", log_writer_stderr()));
+	log_fmt_set("[%f:%F:%l] %m");
 
 	error_code(ERROR_LOGICAL);
 	error_set("right thruster down");

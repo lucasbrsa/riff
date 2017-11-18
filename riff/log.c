@@ -243,14 +243,15 @@ void __writer_null(log_msg_t* msg, void* impl)
 { return; }
 
 void __writer_stdout(log_msg_t* msg, void* impl)
-{ fputs(msg->formatted, stdout); putc('\n', stdout); }
+{ fputs(msg->formatted, stdout); putc('\n', stdout); fflush(stdout); }
 
 void __writer_stderr(log_msg_t* msg, void* impl)
-{ fputs(msg->formatted, stderr); putc('\n', stdout); }
+{ fputs(msg->formatted, stderr); putc('\n', stdout); fflush(stderr); }
 
 void __writer_basic(log_msg_t* msg, void* impl) {
 	FILE* t = (*(struct __writer_data_basic*)impl).target;
 	fputs(msg->formatted, t); putc('\n', t);
+	fflush(t);
 }
 
 void __writer_capped(log_msg_t* msg, void* impl) {
@@ -262,6 +263,8 @@ void __writer_capped(log_msg_t* msg, void* impl) {
 		fputs(msg->formatted, i.target);
 		putc('\n', i.target);
 	}
+
+	fflush(i.target);
 }
 
 void __writer_syslog(log_msg_t* msg, void* impl) {
