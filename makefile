@@ -1,4 +1,4 @@
-.PHONY: all build test clean rebuild
+.PHONY: all build test debug_test clean rebuild
 
 MFLAGS=--no-print-directory
 
@@ -9,6 +9,9 @@ build:
 
 test:build
 	@cd test && $(MAKE) $(MFLAGS) run
+
+debug_test:build
+	@cd test && $(MAKE) $(MFLAGS) debug
 
 clean:
 	@cd riff && $(MAKE) $(MFLAGS) $@

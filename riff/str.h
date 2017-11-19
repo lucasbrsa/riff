@@ -189,7 +189,7 @@ size_t str_len_including(const char* src, const char* inclusions);
 size_t str_len_excluding(const char* src, const char* exclusions);
 
 /* make file paths follow consistent Linux style */
-///char* str_clean_path(char* dest, const char* src);
+char* str_clean_path(char* dest, const char* src);
 
 /* make a relative file path absolute */
 ///char* str_reltoabs_path(char* dest, const char* rel, const char* path);

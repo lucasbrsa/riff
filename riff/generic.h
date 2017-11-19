@@ -8,10 +8,14 @@
 #include <string.h>
 
 /* maximum of a and b */
+#ifndef MAX
 #define MAX(a, b) ((a > b) ? a : b)
+#endif
 
 /* minimum of a and b */
+#ifndef MIN
 #define MIN(a, b) ((a < b) ? a : b)
+#endif
 
 /* absolute value of a */
 #define ABS(a) ((a > 0)? a : (-1 * (a)))

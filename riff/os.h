@@ -98,10 +98,9 @@
 #	define OS_UNKNOWN
 #endif
 
-
 #ifndef OS_WINDOWS
 #	define OS_ANSI
-#	define OS_COLOUR_RESET "\033[00m"
+#	define OS_COLOUR_RESET "\033[0m"
 #	define OS_COLOUR_BOLD "\033[1m"
 #	define OS_COLOUR_DARK "\033[2m"
 #	define OS_COLOUR_UNDERLINE "\033[4m"
@@ -109,7 +108,7 @@
 #	define OS_COLOUR_REVERSE "\033[7m"
 #	define OS_COLOUR_CONCEALED "\033[8m"
 
-#	define OS_COLOUR_GREY "\033[30m"
+#	define OS_COLOUR_BLACK "\033[30m"
 #	define OS_COLOUR_RED "\033[31m"
 #	define OS_COLOUR_GREEN "\033[32m"
 #	define OS_COLOUR_YELLOW "\033[33m"
@@ -118,7 +117,7 @@
 #	define OS_COLOUR_CYAN "\033[36m"
 #	define OS_COLOUR_WHITE "\033[37m"
 
-#	define OS_COLOUR_ON_GREY "\033[40m"
+#	define OS_COLOUR_ON_BLACK "\033[40m"
 #	define OS_COLOUR_ON_RED "\033[41m"
 #	define OS_COLOUR_ON_GREEN "\033[42m"
 #	define OS_COLOUR_ON_YELLOW "\033[43m"
@@ -126,6 +125,15 @@
 #	define OS_COLOUR_ON_MAGENTA "\033[45m"
 #	define OS_COLOUR_ON_CYAN "\033[46m"
 #	define OS_COLOUR_ON_WHITE "\033[47m"
+
+#	define OS_COLOUR_BRIGHT0 "\033[90m"
+#	define OS_COLOUR_BRIGHT1 "\033[91m"
+#	define OS_COLOUR_BRIGHT2 "\033[92m"
+#	define OS_COLOUR_BRIGHT3 "\033[93m"
+#	define OS_COLOUR_BRIGHT4 "\033[94m"
+#	define OS_COLOUR_BRIGHT5 "\033[95m"
+#	define OS_COLOUR_BRIGHT6 "\033[96m"
+#	define OS_COLOUR_BRIGHT7 "\033[97m"
 #endif
 
 #endif

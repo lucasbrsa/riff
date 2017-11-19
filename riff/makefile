@@ -16,7 +16,7 @@ all: $(BPROC)
 $(ODIR)/%.o: $(SDIR)/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BPROC): $(OBJ)
+$(BPROC): $(OBJ) $(SRC)
 	ar $(LFLAGS) $(BPROC) $(OBJ)
 
 list: $(BPROC)
