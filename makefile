@@ -1,4 +1,4 @@
-.PHONY: all build test debug_test clean rebuild
+.PHONY: all build test debug_test clean rebuild valgrind
 
 MFLAGS=--no-print-directory
 
@@ -12,6 +12,9 @@ test:build
 
 debug_test:build
 	@cd test && $(MAKE) $(MFLAGS) debug
+
+valgrind:build
+	@cd test && $(MAKE) $(MFLAGS) valgrind
 
 clean:
 	@cd riff && $(MAKE) $(MFLAGS) $@

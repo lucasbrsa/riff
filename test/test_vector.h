@@ -45,7 +45,9 @@ void vector_test(void) {
 
 	test_seq(vector_att(k, 0, char*), "pranked");
 
-	char* buffer = malloc(sizeof("I'd just like to interject for a moment... ") + 1);
+	vector_free(k);
+
+	char* buffer = calloc(sizeof("I'd just like to interject for a moment... ") + 1, 1);
 	char* b = buffer;
 
 	for (vector_iterator(j, char*, it)) {

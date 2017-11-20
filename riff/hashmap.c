@@ -31,6 +31,7 @@ size_t hashmap_hash(hashmap_t* map, const char* key) {
 
 void hashmap_free(hashmap_t* map) {
 	hashmap_clear(map);
+	free(map->buckets);
 	free(map);
 }
 

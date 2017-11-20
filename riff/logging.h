@@ -91,5 +91,4 @@ void logging_wrapper(
 #define LOGGING_DEFAULT_WRITER logging_writer_coloured
 #endif
 
-
 #endif

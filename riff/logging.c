@@ -109,7 +109,7 @@ void logging_writer_stdout(logging_msg_t* msg) {
 
 void logging_writer_file(logging_msg_t* msg) {
 	if (global_filetarget) {
-		fprintf(global_filetarget, "%s %-6s %s:%d %02s\n",
+		fprintf(global_filetarget, "%s %-6s %s:%02d %s\n",
 			msg->ftime, levels[msg->level], msg->file, msg->line, msg->message);
 		fflush(global_filetarget);
 	}

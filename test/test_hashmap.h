@@ -34,6 +34,8 @@ void hashmap_test(void) {
 	hashmap_iterate(hm, iscool, buffer);
 	test_seq(buffer, "is a god");
 
+	free(buffer);
+
 	hashmap_set(hm, "cameron", "is an idiot");
 	hashmap_set(hm, "ruchir", "is a god");
 

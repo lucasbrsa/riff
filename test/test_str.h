@@ -103,4 +103,5 @@ void str_test(void) {
 	test_seq(c, "nfnf");
 
 	free(buffer);
+	free(c);
 }

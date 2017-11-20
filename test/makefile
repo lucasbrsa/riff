@@ -1,4 +1,4 @@
-.PHONY: clean run debug rebuild all
+.PHONY: clean run debug rebuild all valgrind
 
 CC=clang
 ODIR=../build
@@ -8,6 +8,7 @@ LRIFF=$(ODIR)/libriff.a
 FLAGS=-std=c99 -g -Wall
 LFLAGS= -L../build -lriff -lm -Wl,-rpath ../build
 IFLAGS=-I. -I../riff/
+VFLAGS=--track-origins=yes --leak-check=full
 
 EXE=test.c
 HDRS := $(wildcard *.h)
@@ -27,6 +28,9 @@ run: $(BPROC)
 debug: $(BPROC)
 	@echo '** DEBUGGING **'
 	@lldb $(BPROC)
+
+valgrind: $(BPROC)
+	@valgrind $(VFLAGS) $(BPROC)
 
 clean:
 	@rm -fv $(BPROC)
