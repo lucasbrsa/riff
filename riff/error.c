@@ -3,7 +3,7 @@
 #include "vector.h"
 
 static vector_t* glob_stack = NULL;
-static log_logger_t* glob_logger = NULL;
+static bool glob_silent = false;
 
 static const char* glob_code_lut[] = {
 #define XX(a, b) b,
@@ -11,13 +11,9 @@ static const char* glob_code_lut[] = {
 #undef XX
 };
 
-void error_logger(log_logger_t* logger) {
-	glob_logger = logger;
+void error_set_silent(bool s) {
+	glob_silent = s;
 }
-
-log_logger_t* error_logger_get(void) {
-	return glob_logger;
-};
 
 error_t* error_form_estruct(
 		size_t code,
@@ -37,11 +33,11 @@ error_t* error_form_estruct(
 	e->func = func;
 
 	if (fmt)
-		vsnprintf(&e->msg[0], ERROR_MAX_LEN, fmt, li);
+		vsnprintf(&e->msg[0], sizeof(e->msg), fmt, li);
 	else
 		str_cpy(&e->msg[0], glob_code_lut[e->code]);
 
-	e->msg[ERROR_MAX_LEN - 1] = 0;
+	e->msg[sizeof(e->msg) - 1] = 0;
 
 	va_end(li);
 
@@ -52,19 +48,16 @@ void error_set_newerror(error_t* error) {
 	if (glob_stack == NULL)
 		glob_stack = vector_init(2, sizeof(error_t*), free);
 
-#if ERROR_LOG_ONSET != 0
-	if (glob_logger) {
-		log_wrapper(
-				glob_logger, error->func, error->file, error->line,
+	if (!glob_silent) {
+		logging_wrapper(
+				error->func, error->file, error->line,
 				ERROR_PRIO, ERROR_FMT, error->msg);
 	}
-#endif
 
 	vector_push_back(glob_stack, error);
 }
 
 size_t error_get_depth(void) {
-
 	return (glob_stack == NULL)? 0 : vector_size(glob_stack);
 }
 
@@ -81,7 +74,7 @@ void error_log(void) {
 
 	for (int i = 0; i < vector_size(glob_stack); i++) {
 		error_t* e = vector_att(glob_stack, i, error_t*);
-		log_wrapper(glob_logger, e->func, e->file, e->line, ERROR_PRIO, ERROR_FMT, e->msg);
+		logging_wrapper(e->func, e->file, e->line, ERROR_PRIO, ERROR_FMT, e->msg);
 	}
 }
 

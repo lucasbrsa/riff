@@ -2,37 +2,37 @@
 
 CC=clang
 ODIR=../build
-BPROC=$(ODIR)/test
-LRIFF=$(ODIR)/libriff.a
-
+LDIR=../riff
+LRIFF=$(LDIR)/libriff.a
 FLAGS=-std=c99 -g -Wall
 LFLAGS= -L../build -lriff -lm -Wl,-rpath ../build
 IFLAGS=-I. -I../riff/
 VFLAGS=--track-origins=yes --leak-check=full
 
-EXE=test.c
 HDRS := $(wildcard *.h)
+BPROC := $(patsubst %.c,$(ODIR)/%,$(wildcard *.c))
 
 all: $(BPROC)
 
 $(LRIFF):
-	cd $(ODIR) && $(MAKE)
+	cd $(LDIR) && $(MAKE)
 
-$(BPROC): $(EXE) $(LRIFF) $(HDRS)
+$(ODIR)/%: %.c $(LRIFF) $(HDRS)
 	$(CC) $(FLAGS) -o $@ $< $(IFLAGS) $(LFLAGS)
 
-run: $(BPROC)
+run_%: $(ODIR)/%
 	@echo '** RUNNING **'
-	@./$(BPROC)
+	@./$<
 
-debug: $(BPROC)
+debug_%: $(ODIR)/%
 	@echo '** DEBUGGING **'
-	@lldb $(BPROC)
+	@lldb $<
 
-valgrind: $(BPROC)
-	@valgrind $(VFLAGS) $(BPROC)
+valgrind_%: $(ODIR)/%
+	@valgrind $(VFLAGS) $<
 
 clean:
+	@# valgrind files...
 	@rm -fv $(BPROC)
 
 rebuild: clean run

@@ -1,37 +1,26 @@
 /* @TODO include line func and file info in the log set */
 /* @TODO launch breakpoint/stop on error */
 
-/* WHEN PARSING TO THE LOGGER USE THE WRAPPER AND PARSE THE LINE< FUNC BALH BLAH MANULLY */
-
 #ifndef _ERROR_H
 #define _ERROR_H
 
 #include <stdarg.h>
 
 #include "generic.h"
-#include "log.h"
-
-#define ERROR_MAX_LEN 1024
+#include "logging.h"
 
 #define ERROR_FMT "%s"
 
-#define ERROR_PRIO LOG_PRIO_ERROR
-
-#ifndef ERROR_LOG_ONSET
-#	define ERROR_LOG_ONSET 0
-#endif
+#define ERROR_PRIO LOGGING_ERROR
 
 typedef struct {
 	size_t line, code;
-	char msg[ERROR_MAX_LEN];
+	char msg[1024];
 	const char *file, *func;
 } error_t;
 
-/* set the logger to use when an error is set */
-void error_logger(log_logger_t* logger);
-
-/* get the current logger */
-log_logger_t* error_logger_get(void);
+/* should an error be logged? */
+void error_set_silent(bool s);
 
 /* form an error_t from all the required data, must be freed */
 error_t* error_form_estruct(
@@ -50,11 +39,10 @@ size_t error_get_depth(void);
 /* get from error buffer */
 error_t* error_get_struct(size_t index);
 
-/* get just the msg from the top of the stack */
-/* looses a lot of data when done like this, depreciated */
+/* get just the msg from the top of the stack, only the message */
 const char* error_get(void);
 
-/* log the error stack */
+/* log the error stack, may be used when error_set_silent(true) */
 void error_log(void);
 
 /* remove error state, free that memory */

@@ -8,13 +8,13 @@ build:
 	@cd riff && $(MAKE) $(MFLAGS)
 
 test:build
-	@cd test && $(MAKE) $(MFLAGS) run
+	@cd test && $(MAKE) $(MFLAGS) run_test
 
 debug_test:build
-	@cd test && $(MAKE) $(MFLAGS) debug
+	@cd test && $(MAKE) $(MFLAGS) debug_test
 
 valgrind:build
-	@cd test && $(MAKE) $(MFLAGS) valgrind
+	@cd test && $(MAKE) $(MFLAGS) valgrind_test
 
 clean:
 	@cd riff && $(MAKE) $(MFLAGS) $@

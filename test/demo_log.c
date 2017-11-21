@@ -1,3 +1,4 @@
+#ifdef OLD_LOGGING
 #define LOG_LEVEL 3
 
 #include "log.h"
@@ -41,3 +42,47 @@ int main() {
 
 	log_notice(log_logger_get("general"), "This was created by a multi-writer logger");
 }
+#endif
+
+#include "logging.h"
+
+int main() {
+	logging_set_writer(logging_writer_stdout);
+
+	logging_notice("Hello %s", "world!");
+	logging_notice("I am an stdout writer");
+
+	logging_warn_if(1 == 0, "Oh no...");
+	/* loggers are a lame idea */
+
+	logging_panic("I'm suiciding now");
+
+	/* there aren't separate loggers, just one state machine */
+	/* just uses a callback function called a 'writer' */
+	logging_set_writer(logging_writer_coloured);
+
+	/* you can't change the format, just implement your own writer */
+	logging_debug("hello");
+	logging_info("hello");
+	logging_notice("hello");
+	logging_warn("hello");
+	logging_error("hello");
+	logging_panic("hello");
+
+	/* basically all you ever need */
+	logging_set_writer(logging_writer_colourful_and_file);
+	logging_set_file(fopen("res/demo.log", "w"));
+
+	logging_notice("this is also written to a file");
+
+	logging_set_silent();
+
+	logging_notice("this only goes to the file and no stderr");
+
+	logging_set_noisy();
+
+	logging_warn("ending demo");
+
+	fclose(logging_get_file());
+}
+

@@ -2,6 +2,9 @@
 #include "error.h"
 
 void error_test(void) {
+
+	error_set_silent(true);
+
 	test_seq(error_get(), "no error");
 	error_set("something's wrong...");
 

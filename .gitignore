@@ -10,8 +10,9 @@ demos/*.o
 *.vcxproj
 *.vcxproj.filters
 
-# ctags gen
+# ctags gen & vim-clang
 tags
+.clang
 
 # User-specific files
 *.suo

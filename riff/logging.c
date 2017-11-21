@@ -15,27 +15,15 @@ static unsigned global_level = LOGGING_DEBUG;
 static unsigned global_msgcount = 0;
 static FILE* global_filetarget = NULL;
 
+#ifdef LOGGING_SILENT
+static bool global_silent = true;
+#else
+static bool global_silent = false;
+#endif
+
 static const char* levels[] = {
 	"DEBUG", "INFO", "NOTICE", "WARN", "ERROR", "PANIC"
 };
-
-void logging_set_level(unsigned l) {
-	global_level = l;
-}
-
-void logging_set_file(FILE* fp) {
-	global_filetarget = fp;
-}
-
-void logging_get_writer(logging_writer_f writer) {
-	global_writer = writer;
-}
-
-void logging_set_writer(logging_writer_f* writer) {
-	if (writer) {
-		*writer = global_writer;
-	}
-}
 
 void logging_wrapper(
 		const char* function,
@@ -59,8 +47,11 @@ void logging_wrapper(
 	level = (level > LOGGING_PANIC)? LOGGING_PANIC : level;
 
 	char* msg = str_vsprintf(fmt, args);
-	char* cleanpath = malloc(strlen(file));
-	str_clean_path(cleanpath, file);
+
+	/* char* cleanpath = malloc(strlen(file)); */
+	/* str_clean_path(cleanpath, file); */
+
+	const char* cleanpath = file;
 
 	static logging_msg_t userdata;
 	userdata.file = cleanpath;
@@ -76,20 +67,21 @@ void logging_wrapper(
 		global_writer(&userdata);
 
 	free(msg);
-	free(cleanpath);
+
+	/* free(cleanpath); */
 
 	va_end(args);
 }
 
 void logging_writer_coloured(logging_msg_t* msg) {
 	static const char* level_colours[] = {
-		/* DEBUG  */ OS_COLOUR_BRIGHT4,
-		/* INFO   */ OS_COLOUR_CYAN,
-		/* NOTICE */ OS_COLOUR_BLUE,
-		/* WARN   */ OS_COLOUR_YELLOW,
-		/* ERROR  */ OS_COLOUR_RED,
-		/* PANIC  */ OS_COLOUR_MAGENTA
+		OS_COLOUR_BRIGHT4, OS_COLOUR_CYAN, OS_COLOUR_BLUE,
+		OS_COLOUR_YELLOW, OS_COLOUR_RED, OS_COLOUR_MAGENTA
 	};
+
+	if (global_silent)
+		return;
+
 	fprintf(stderr, "%s %s%-6s " OS_COLOUR_BRIGHT0 "%s:%02d " OS_COLOUR_WHITE "%s\n",
 		msg->ftime, level_colours[msg->level], levels[msg->level],
 		msg->file, msg->line, msg->message);
@@ -98,11 +90,17 @@ void logging_writer_coloured(logging_msg_t* msg) {
 }
 
 void logging_writer_stderr(logging_msg_t* msg) {
+	if (global_silent)
+		return;
+
 	fprintf(stderr, "%s %-6s %s:%02d %s\n",
 		msg->ftime, levels[msg->level], msg->file, msg->line, msg->message);
 }
 
 void logging_writer_stdout(logging_msg_t* msg) {
+	if (global_silent)
+		return;
+
 	printf("%s %-6s %s:%02d %s\n",
 		msg->ftime, levels[msg->level], msg->file, msg->line, msg->message);
 }
@@ -124,4 +122,42 @@ void logging_writer_syslog(logging_msg_t* msg) {
 void logging_writer_colourful_and_file(logging_msg_t* msg) {
 	logging_writer_coloured(msg);
 	logging_writer_file(msg);
+}
+
+void logging_set_level(unsigned l) {
+	global_level = l;
+}
+
+void logging_set_file(FILE* fp) {
+	global_filetarget = fp;
+}
+
+void logging_set_writer(logging_writer_f writer) {
+	global_writer = writer;
+}
+
+void logging_get_writer(logging_writer_f* writer) {
+	if (writer) {
+		*writer = global_writer;
+	}
+}
+
+FILE* logging_get_file(void) {
+	return global_filetarget;
+}
+
+unsigned logging_get_level(void) {
+	return global_level;
+}
+
+void logging_set_silent(void) {
+	global_silent = true;
+}
+
+void logging_set_noisy(void) {
+	global_silent = false;
+}
+
+unsigned logging_get_count(void) {
+	return global_msgcount;
 }

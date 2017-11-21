@@ -591,15 +591,12 @@ size_t str_len_excluding(const char* src, const char* exclusions) {
 
 char* str_clean_path(char* dest, const char* src) {
 	/* simple (bad) example */
-	int e = 0, slash = 0;
-	while (src[e]) {
-		if (src[e] == '/' || src[e] == '\\')
-			slash = e;
+	int e = 0;
+	while (src[e])
 		e++;
-	}
 
-	memcpy(dest, src + slash + 1, e - slash - 1);
-	dest[e - slash - 1] = '\0';
+	memcpy(dest, src, e);
+	dest[e + 1] = '\0';
 
 	return dest;
 }
