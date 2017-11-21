@@ -1,27 +1,27 @@
 #include "test.h"
-#include "logging.h"
+#include "log.h"
 
 #include <stdio.h>
 
 void log_test(void) {
 	FILE* flog = fopen("res/test.log", "w");
-	logging_set_file(flog);
+	log_set_file(flog);
 
-	logging_set_silent();
+	log_set_silent();
 
-	int count = logging_get_count();
-	logging_set_level(LOGGING_WARN);
-	logging_debug("example");
-	logging_info("example");
-	logging_notice("example");
-	logging_warn("example");
-	logging_error("example");
-	logging_panic("example");
+	int count = log_get_count();
+	log_set_level(LOG_WARN);
+	log_debug("example");
+	log_info("example");
+	log_notice("example");
+	log_warn("example");
+	log_error("example");
+	log_panic("example");
 
-	test_assert(logging_get_count() - count == 3);
+	test_assert(log_get_count() - count == 3);
 
 	fseek(flog, 0L, SEEK_END);
 	test_assert(ftell(flog) != 0);
 
-	fclose(logging_get_file());
+	fclose(log_get_file());
 }

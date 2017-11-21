@@ -49,7 +49,7 @@ void error_set_newerror(error_t* error) {
 		glob_stack = vector_init(2, sizeof(error_t*), free);
 
 	if (!glob_silent) {
-		logging_wrapper(
+		log_wrapper(
 				error->func, error->file, error->line,
 				ERROR_PRIO, ERROR_FMT, error->msg);
 	}
@@ -74,7 +74,7 @@ void error_log(void) {
 
 	for (int i = 0; i < vector_size(glob_stack); i++) {
 		error_t* e = vector_att(glob_stack, i, error_t*);
-		logging_wrapper(e->func, e->file, e->line, ERROR_PRIO, ERROR_FMT, e->msg);
+		log_wrapper(e->func, e->file, e->line, ERROR_PRIO, ERROR_FMT, e->msg);
 	}
 }
 

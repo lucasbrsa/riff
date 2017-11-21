@@ -7,11 +7,11 @@
 #include <stdarg.h>
 
 #include "generic.h"
-#include "logging.h"
+#include "log.h"
 
 #define ERROR_FMT "%s"
 
-#define ERROR_PRIO LOGGING_ERROR
+#define ERROR_PRIO LOG_LEVEL_ERROR
 
 typedef struct {
 	size_t line, code;
@@ -81,5 +81,7 @@ enum {
 	ERROR_CODES
 #undef XX
 };
+
+#define SAT
 
 #endif
