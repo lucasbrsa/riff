@@ -10,7 +10,7 @@ void log_test(void) {
 	log_set_silent();
 
 	int count = log_get_count();
-	log_set_level(LOG_WARN);
+	log_set_level(LOG_LEVEL_WARN);
 	log_debug("example");
 	log_info("example");
 	log_notice("example");

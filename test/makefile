@@ -2,11 +2,11 @@
 
 CC=clang
 ODIR=../build
-LDIR=../riff
-LRIFF=$(LDIR)/libriff.a
+LDIR=..
+LRIFF=$(ODIR)/libriff.a
 FLAGS=-std=c99 -g -Wall
 LFLAGS= -L../build -lriff -lm -Wl,-rpath ../build
-IFLAGS=-I. -I../riff/
+IFLAGS=-I. -I../include
 VFLAGS=--track-origins=yes --leak-check=full
 
 HDRS := $(wildcard *.h)

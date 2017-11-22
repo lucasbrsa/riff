@@ -1,0 +1,3 @@
+11:45:49 WARN   ./test_log.h:17 example
+11:45:49 ERROR  ./test_log.h:18 example
+11:45:49 PANIC  ./test_log.h:19 example
