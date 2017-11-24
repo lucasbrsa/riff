@@ -14,10 +14,13 @@ OBJ := $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(SRC))
 LFLAGS=-cvq
 CFLAGS=-std=c99 -g -Wall -Iinclude/
 
+build: $(BPROC)
+
 $(ODIR)/%.o: $(SDIR)/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-$(BPROC): $(OBJ) $(SRC)
+$(BPROC): $(OBJ)
+	@rm -fv $(BPROC)
 	ar $(LFLAGS) $(BPROC) $(OBJ)
 
 list: $(BPROC)
@@ -36,7 +39,6 @@ clean:
 	@rm -fv $(BPROC) $(ODIR)/*.o
 	@cd test && $(MAKE) $@
 
-build: $(BPROC)
 
 rebuild: clean build
 

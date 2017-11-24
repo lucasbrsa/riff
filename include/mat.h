@@ -8,8 +8,8 @@
 /* represents an n * m matrix */
 typedef struct mat_t {
 	
-	/* holds the matrix, is calloced so will need to be freed */
-	float** matrix;
+	/* holds the matrix, is calloced so it'll need to be freed */
+	float* matrix;
 
 	/* number of rows */
 	unsigned int width;
@@ -17,19 +17,10 @@ typedef struct mat_t {
 	/* number of columns */
 	unsigned int height;
 
-	/* stores the transpose of this matrix
-	 * so it isn't calculated needlessly
-	 * is updated when transpose() is called
-	*/
-	float** transpose;
 } mat;
 
-/* create and return a new n * m sized matrix
- * params for size of matrix */
-mat mat_init(const unsigned int width, const unsigned int height);
-
-/* free the memory used by a matrix */
-void mat_free(mat* m);
+/* create and return a new n * m sized matrix */
+mat* mat_init(const unsigned int width, const unsigned int height);
 
 /* grow the matrix to a new size */
 bool mat_resize(mat* m, const unsigned int new_width, const unsigned int new_height);
@@ -37,15 +28,26 @@ bool mat_resize(mat* m, const unsigned int new_width, const unsigned int new_hei
 /* set all elements to 0 */
 bool mat_reset(mat* m);
 
+mat mat_mult(mat* a, mat* b);
+
+#define mat_free(mp) \
+	free(mp->matrix)
+
 #define mat_width(m) \
-	m.width
+	(m.width)
 
 #define mat_height(m) \
-	m.height
+	(m.height)
 
 #define mat_size(m) \
 	(m.width * m.height)
 
-//#define mat_print(m) \
+#define mat_print(m) \
+	for(unsigned int y = 0; y < mat_height(m); y++) { \
+		for(unsigned int x = 0; x < mat_width(m); x++) { \
+			printf("%f ", m.matrix[y * mat_width(m) + y]); \
+		} \
+		putc('\n', stdout); \
+	} \
 
 #endif
