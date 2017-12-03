@@ -152,7 +152,7 @@ void vector_pop(vector_t* v, size_t i) {
 }
 
 bool vector_eq(vector_t* v1, vector_t* v2) {
-	if (v1->size != v2->size || v1->blksz != v1->blksz)
+	if (v1->size != v2->size || v1->blksz != v2->blksz)
 		return false;
 
 	for (size_t i = 0; i < v1->size * v1->blksz; i++)

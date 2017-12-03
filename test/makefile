@@ -1,11 +1,11 @@
-.PHONY: clean run debug rebuild all valgrind
+.PHONY: clean build_% run_% debug_% rebuild all valgrind_%
 
-CC=clang
+CC=gcc
 ODIR=../build
 LDIR=..
 LRIFF=$(ODIR)/libriff.a
 FLAGS=-std=c99 -g -Wall
-LFLAGS= -L../build -lriff -lm -Wl,-rpath ../build
+LFLAGS= -L../build -lriff -lm -lX11 -Wl,-rpath ../build
 IFLAGS=-I. -I../include
 VFLAGS=--track-origins=yes --leak-check=full
 
@@ -20,13 +20,16 @@ $(LRIFF):
 $(ODIR)/%: %.c $(LRIFF) $(HDRS)
 	$(CC) $(FLAGS) -o $@ $< $(IFLAGS) $(LFLAGS)
 
+build_%: $(ODIR)/%
+	@echo '** BUILT **'
+
 run_%: $(ODIR)/%
 	@echo '** RUNNING **'
 	@./$<
 
 debug_%: $(ODIR)/%
 	@echo '** DEBUGGING **'
-	@lldb $<
+	@gdb $<
 
 valgrind_%: $(ODIR)/%
 	@valgrind $(VFLAGS) $<

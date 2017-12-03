@@ -85,7 +85,7 @@ void error_clear(void) {
 
 const char* error_get(void) {
 	if (glob_stack == NULL || vector_size(glob_stack) == 0)
-		return "no error";
+		return NULL;
 
 	return error_get_struct(vector_size(glob_stack) - 1)->msg;
 }

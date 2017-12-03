@@ -1,9 +1,9 @@
-.PHONY: list run_% debug_% valgrind_% clean build rebuild all run test debug valgrind force demo_% tag ctags
+.PHONY: list build_% run_% debug_% valgrind_% clean build rebuild all run test debug valgrind force demo_% tag ctags
 
 MFLAGS=--no-print-directory
 MAKE=make $(MFLAGS)
 
-CC=clang
+CC=gcc
 SDIR=src
 ODIR=build
 BPROC=$(ODIR)/libriff.a
@@ -12,16 +12,20 @@ SRC := $(wildcard $(SDIR)/*.c)
 OBJ := $(patsubst $(SDIR)/%.c,$(ODIR)/%.o,$(SRC))
 
 LFLAGS=-cvq
-CFLAGS=-std=c99 -g -Wall -Iinclude/
+CFLAGS=-std=gnu99 -g -Wall -Iinclude/
 
 $(ODIR)/%.o: $(SDIR)/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BPROC): $(OBJ) $(SRC)
+	@rm -fv $(BPROC)
 	ar $(LFLAGS) $(BPROC) $(OBJ)
 
 list: $(BPROC)
 	@ar -t $(BPROC)
+
+build_%:build
+	@cd test && $(MAKE) $@
 
 run_%:build
 	@cd test && $(MAKE) $@

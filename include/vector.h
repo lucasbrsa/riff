@@ -11,10 +11,10 @@
 #include "generic.h"
 
 /* the minimum size allowed for a vector */
-#define VECTOR_MINSIZE 4
+#define VECTOR_MINSIZE 1
 
 /* defines the eqn of growth */
-#define VECTOR_GROWTH(n) (2*(n))
+#define VECTOR_GROWTH(n) (2*((n)+1))
 
 /* a function call when members of a vector are heap allocated */
 typedef void(vector_del_f)(void* ptr);
