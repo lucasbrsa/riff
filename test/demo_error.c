@@ -9,5 +9,7 @@ int main() {
 	error_set("navigation system down");
 	error_set("unexpected system crash..");
 
+	error_set("meme");
+
 	error_clear();
 }
