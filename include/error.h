@@ -13,6 +13,14 @@
 
 #define ERROR_PRIO LOG_LEVEL_ERROR
 
+/* return from function indicating state */
+typedef int status_t;
+
+#define STATUS_GOOD 0
+
+#define STATUS_BAD 1
+
+/* an error instance */
 typedef struct {
 	size_t line, code;
 	char msg[1024];

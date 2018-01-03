@@ -6,7 +6,11 @@
 #include <stdarg.h>
 
 #if LOG_USE_SYSLOG == 1
-#include <syslog.h>
+# 	include <syslog.h>
+#endif
+
+#if 1 /* HAS_UNISTD */
+# 	include <unistd.h>
 #endif
 
 /* the logger state machine properties */

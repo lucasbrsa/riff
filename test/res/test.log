@@ -1,3 +1,3 @@
-13:53:02 WARN   test_log.h:17 example
-13:53:02 ERROR  test_log.h:18 example
-13:53:02 PANIC  test_log.h:19 example
+11:01:47 WARN   test_log.h:17 example
+11:01:47 ERROR  test_log.h:18 example
+11:01:47 PANIC  test_log.h:19 example

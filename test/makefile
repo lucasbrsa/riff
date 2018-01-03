@@ -1,11 +1,13 @@
 .PHONY: clean build_% run_% debug_% rebuild all valgrind_%
 
+DEPS=-lm -lX11 -lGL
+
 CC=gcc
 ODIR=../build
 LDIR=..
 LRIFF=$(ODIR)/libriff.a
 FLAGS=-std=c99 -g -Wall
-LFLAGS= -L../build -lriff -lm -lX11 -Wl,-rpath ../build
+LFLAGS= -L../build -lriff $(DEPS) -Wl,-rpath ../build
 IFLAGS=-I. -I../include
 VFLAGS=--track-origins=yes --leak-check=full
 
